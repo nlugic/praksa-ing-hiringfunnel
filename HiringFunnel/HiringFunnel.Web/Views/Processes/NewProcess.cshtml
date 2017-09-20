@@ -1,0 +1,69 @@
+﻿@model HiringFunnel.Web.ViewModels.ProcessInfo
+
+@using HiringFunnel.Data
+@using HiringFunnel.Data.Models
+@using HiringFunnel.Data.DAL
+
+@using (Html.BeginForm(actionName: "NewProcess", controllerName: "Processes")) 
+{
+    <div class="modal-body">
+        <div class="form-horizontal newProcessFormContainer">
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label" })
+                <div>
+                    @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Technologies, htmlAttributes: new { @class = "control-label" })
+                <div class="techInputs">
+                    <select class="form-control" name="Technologies" multiple>
+                        <option value="">Odaberi tehnologije</option>
+                        @{
+                            ICollection<Technology> technologies = null;
+                            using (HFContext hfdb = new HFContext())
+                            {
+                                technologies = hfdb.Technologies.ToList();
+                            }
+
+                            foreach (Technology aTech in technologies)
+                            {
+                                <option value="@aTech.Id">@aTech.Name</option>
+                            }
+                        }
+                    </select>
+                    <input class="form-control" type="text" name="newTechName" placeholder="Dodaj novu tehnologiju..." />
+                    <button class="btn btn-sm btn-success" type="button" onclick="addNewTechnology()">
+                        <span class="glyphicon glyphicon-plus"></span>
+                        <span>Dodaj</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Seniority, htmlAttributes: new { @class = "control-label" })
+                <div>
+                    <select class="form-control" name="Seniority" size="1">
+                        @{ Array seniorities = Enum.GetValues(typeof(SeniorityLevel)); }
+                        @for (int i = 0; i < seniorities.Length; ++i)
+                        {
+                            SeniorityLevel sen = (SeniorityLevel)seniorities.GetValue(new[] { i });
+                            <option value="@((int)sen)" selected="@((i == 0) ? true : false)">@sen</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn btn-success" type="submit">
+            <span class="glyphicon glyphicon-check"></span>
+            <span>Dodaj</span>
+        </button>
+    </div>
+}

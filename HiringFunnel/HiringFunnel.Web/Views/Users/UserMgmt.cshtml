@@ -1,0 +1,127 @@
+﻿@using HiringFunnel.Web.ViewModels
+@model IEnumerable<UserInfo>
+
+@{ ViewBag.Title = "HiringFunnel - Upravljanje korisnicima"; }
+@using HiringFunnel.Data;
+@using HiringFunnel.Data.Models
+
+@{ User login = Session["login"] as User; }
+
+<h3>Upravljanje korisnicima</h3>
+<hr />
+
+@if (login.Role <= UserLevel.HR)
+{
+    <a class="btn btn-success col-md-2" href="@Url.Action("NewUser", "Users")">
+        <span class="glyphicon glyphicon-plus"></span>
+        <span>Dodaj korisnika</span>
+    </a>
+}
+
+<table id="user-mgmt-table" class="table table-hover table-striped table-condensed">
+    <!-- ovde crta datatable -->
+</table>
+
+<!-- MODALNA FORMA ZA POTVRDU BRISANJA KORISNIKA -->
+<div id="modalDelete" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="close" type="button" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Obriši korisnika</h4>
+            </div>
+            <div class="modal-body">
+                <p>Da li ste sigurni da želite da obrišete ovog korisnika?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" type="button" data-dismiss="modal">Ne</button>
+                <a class="btn btn-danger">
+                    <span class="glyphicon glyphicon-remove"></span>
+                    <span>Obriši</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts
+{
+
+    <script type="text/javascript">
+
+        function deleteModal(e) {
+            $('#modalDelete a.btn.btn-danger').attr({ 'href': 'DeleteUser/' + e.value });
+            $('#modalDelete').modal("show");
+        }
+
+        let userId = @login.Id;
+        let userRole = @((int)login.Role);
+
+        var assetListUsers;
+
+        $(() => {
+            assetListUsers = {
+                dt: null,
+                init: () => {
+                    dt = $('#user-mgmt-table').DataTable({
+                        "serverSide": true,
+                        "processing": true,
+                        "autoWidth": false,
+                        "pageLength": 10,
+                        "dom": 'ftp',
+                        "language": {
+                            "paginate": {
+                                "next": "<span>→</span>", //Sledeća
+                                "previous": "<span>←</span>" //Prethodna
+                            },
+                            "search": "<span>Pretraži korisnike (po imenu, e-mail adresi ili iskustvu): <span>",
+                            "emptyTable": "Nema podataka za prikaz."
+                        },
+                        "ajax": {
+                            "url": "@Url.Action("GetUserData", "Data")",
+                            "type": "POST"
+                        },
+                        "columns": [
+                            { "title": "Ime i prezime", "data": "FirstName", "searchable": true, "sortable": true, "width": "18%" },
+                            { "title": "@Html.DisplayNameFor(model => model.Email)", "data": "Email", "searchable": true, "sortable": true, "width": "20%" },
+                            { "title": "@Html.DisplayNameFor(model => model.Seniority)", "data": "Seniority", "searchable": false, "sortable": true, "width": "6%" },
+                            { "title": "@Html.DisplayNameFor(model => model.Role)", "data": "Role", "searchable": false, "sortable": true, "width": "6%" },
+                            { "title": "@Html.DisplayNameFor(model => model.Technologies)", "data": "Technologies", "searchable": true, "sortable": false, "width": "34%" },
+                            {
+                                "searchable": false, "sortable": false, "width": "16%",
+                                render: (data, type, row) => {
+                                    let btnGroupHtml = "<div class='buttonGroupCenter'>\
+                                                        <div class='btn-group btn-group-sm'>\
+                                                        <a class='btn btn-primary' href='UserDetails/" + row.Id + "'>\
+                                                        <span class='glyphicon glyphicon-info-sign'></span>\
+                                                        <span>Info</span>";
+
+                                    if (userRole == 0 || userId == row.Id)
+                                        btnGroupHtml += "<span> &amp;</span>\
+                                                         <span>Izmeni</span>\
+                                                         <span class='glyphicon glyphicon-edit'></span>";
+
+                                    btnGroupHtml += "</a>";
+
+                                    if (userRole == 0 && userId != row.Id)
+                                        btnGroupHtml += "<button class='btn btn-danger' value='" + row.Id + "' onclick='deleteModal(this)'>\
+                                                         <span class='glyphicon glyphicon-remove'></span>\
+                                                         <span>Obriši</span></button>";
+
+                                    btnGroupHtml += "</div></div>";
+
+                                    return btnGroupHtml;
+                                }
+                            }
+                        ]
+                    });
+                }
+            };
+
+            assetListUsers.init();
+
+        });
+
+    </script>
+
+}

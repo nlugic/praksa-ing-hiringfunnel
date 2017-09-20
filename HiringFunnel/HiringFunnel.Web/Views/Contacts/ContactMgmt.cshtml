@@ -1,0 +1,182 @@
+﻿@using HiringFunnel.Web.ViewModels
+@model IEnumerable<ContactInfo>
+
+@{ ViewBag.Title = "HiringFunnel - Upravljanje kontaktima"; }
+@using HiringFunnel.Data.Models
+
+@{ User login = Session["login"] as User; }
+
+<h3>Upravljanje kontaktima</h3>
+<hr />
+
+<a class="btn btn-success col-md-2" href="@Url.Action("NewContact")">
+    <span class="glyphicon glyphicon-plus"></span>
+    <span>Dodaj kontakt</span>
+</a>
+
+<table id="contact-mgmt-table" class="table table-hover table-striped table-condensed">
+    <!-- ovde crta datatable -->
+</table>
+
+<!-- MODALNA FORMA ZA POTVRDU BRISANJA KONTAKTA -->
+<div id="modalDelete" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="close" type="button" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Brisanje kontakta</h4>
+            </div>
+            <div class="modal-body">
+                <p>Da li ste sigurni da želite da obrišete ovaj kontakt?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" type="button" data-dismiss="modal">Ne</button>
+                <a class="btn btn-danger">
+                    <span class="glyphicon glyphicon-remove"></span>
+                    <span>Obriši</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALNA FORMA ZA DODAVANJE KONTAKTA U PROCES -->
+<div id="modalAddToProcess" class="modal fade">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="close" type="button" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Dodaj kontakt u proces</h4>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="contactId" />
+                <select class="form-control" name="addToProcess">
+
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" type="button" data-dismiss="modal">Nazad</button>
+                <button class="btn btn-success" data-dismiss="modal" onclick="addContactToProcess(this)">
+                    <span class="glyphicon glyphicon-check"></span>
+                    <span>Dodaj</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts
+{
+
+    <script type="text/javascript">
+
+        function deleteModal(e) {
+            $('#modalDelete a.btn.btn-danger').attr({ 'href': 'DeleteContact/' + e.value });
+            $('#modalDelete').modal("show");
+        }
+
+        function addToProcessModal(e) {
+            $.ajax({
+                url: '@Url.Action("GetProcessesForSelect", "Processes")',
+                type: 'POST',
+                data: {
+                    'contactId': e.value
+                },
+                success: (response) => {
+                    $('#modalAddToProcess select').empty();
+                    $('#modalAddToProcess .btn.btn-success').val(e.value);
+                    response.forEach(row => {
+                        $('#modalAddToProcess select').append('<option value="' + row.Id + '">' + row.Name + '</option>');
+                    });
+                    if (response.length > 0)
+                        $('#modalAddToProcess').modal("show");
+                    else
+                        e.disabled = 'disabled';
+                }
+            });
+        }
+
+        function addContactToProcess(e) {
+            let cId = e.value;
+            let pId = $('select[name=addToProcess] :selected');
+
+            $.ajax({
+                url: '@Url.Action("AddCandidateToContacts", "ProcessInstances")',
+                type: 'POST',
+                data: {
+                    'candidateId': cId,
+                    'processId': pId.val()
+                },
+                success: () => {
+                    if ($('#modalAddToProcess option').length == 1)
+                        $('#contact-mgmt-table .btn.btn-success[value=' + e.value + ']').attr('disabled', 'disabled');
+                }
+            });
+        }
+
+        var assetListContacts;
+
+        $(() => {
+            assetListContacts = {
+                dt: null,
+                init: () => {
+                    dt = $('#contact-mgmt-table').DataTable({
+                        "serverSide": true,
+                        "processing": true,
+                        "autoWidth": false,
+                        "pageLength": 10,
+                        "dom": 'ftp',
+                        "language": {
+                            "paginate": {
+                                "next": "<span>→</span>",
+                                "previous": "<span>←</span>"
+                            },
+                            "search": "<span>Pretraži kontakte (po imenu, lokaciji, e-mail adresi ili iskustvu): <span>",
+                            "emptyTable": "Nema podataka za prikaz."
+                        },
+                        "ajax": {
+                            "url": "@Url.Action("GetContactData", "Data")",
+                            "type": "POST"
+                        },
+                        "columns": [
+                            { "title": "Ime i prezime", "data": "FirstName", "searchable": true, "sortable": true, "width": "14%" },
+                            { "title": "@Html.DisplayNameFor(model => model.Location)", "data": "Location", "searchable": true, "sortable": false, "width": "9%" },
+                            { "title": "@Html.DisplayNameFor(model => model.Email)", "data": "Email", "searchable": true, "sortable": true, "width": "16%" },
+                            { "title": "@Html.DisplayNameFor(model => model.Phone)", "data": "Phone", "searchable": false, "sortable": false, "width": "8%" },
+                            { "title": "@Html.DisplayNameFor(model => model.Seniority)", "data": "Seniority", "searchable": false, "sortable": true, "width": "6%" },
+                            { "title": "@Html.DisplayNameFor(model => model.Technologies)", "data": "Technologies", "searchable": true, "sortable": false, "width": "17%" },
+                            {
+                                "searchable": false, "sortable": false, "width": "26%",
+                                render: (data, type, row) => {
+                                    return "<div class='buttonGroupCenter'>\
+                                                <div class='btn-group btn-group-sm'>\
+                                                <button class='btn btn-success' value='" + row.Id + "' onclick='addToProcessModal(this)'>\
+                                                    <span class='glyphicon glyphicon-plus'></span>\
+                                                    <span>Dodaj u proces</span>\
+                                                </button>\
+                                                <a class='btn btn-primary' href='ContactDetails/" + row.Id + "'>\
+                                                    <span class='glyphicon glyphicon-info-sign'></span>\
+                                                    <span>Info</span>\
+                                                    <span> &amp;</span>\
+                                                    <span>Izmeni</span>\
+                                                    <span class='glyphicon glyphicon-edit'></span>\
+                                                </a>\
+                                                <button class='btn btn-danger' value='" + row.Id + "' onclick='deleteModal(this)'>\
+                                                    <span class='glyphicon glyphicon-remove'></span>\
+                                                    <span>Obriši</span></button>\
+                                                </div>\
+                                            </div>";
+                                }
+                            }
+                        ]
+                    });
+                }
+            }
+
+            assetListContacts.init();
+
+        });
+
+    </script>
+
+}

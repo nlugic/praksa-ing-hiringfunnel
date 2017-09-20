@@ -1,0 +1,29 @@
+﻿namespace HiringFunnel.Data.Migrations
+{
+    using System.Data.Entity.Migrations;
+    using Models;
+    using DAL;
+
+    internal sealed class Configuration : DbMigrationsConfiguration<HFContext>
+    {
+
+        public Configuration()
+        {
+            AutomaticMigrationsEnabled = false;
+        }
+
+        protected override void Seed(HFContext context)
+        {
+            context.Users.Add(new User
+            {
+                FirstName = "Nikola",
+                LastName = "Lugić",
+                Email = "nlugic@gmail.com",
+                PasswordHash = "fa585d89c851dd338a70dcf535aa2a92fee7836dd6aff1226583e88e0996293f16bc009c652826e0fc5c706695a03cddce372f139eff4d13959da6f1f5d3eabe",
+                Seniority = SeniorityLevel.Entry,
+                Role = UserLevel.Admin
+            });
+        }
+
+    }
+}

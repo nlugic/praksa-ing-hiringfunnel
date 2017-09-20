@@ -1,0 +1,474 @@
+﻿@using HiringFunnel.Web.ViewModels
+@model ContactInfo
+
+@{ ViewBag.Title = "HiringFunnel - Podaci o kontaktu"; }
+@using HiringFunnel.Data;
+@using HiringFunnel.Data.Models;
+@using HiringFunnel.Data.DAL;
+
+@Styles.Render("~/Content/flatpickr")
+@Styles.Render("~/Content/selectric")
+
+@{ User login = Session["login"] as User; }
+
+<h3>Podaci o kontaktu</h3>
+<hr />
+
+<div class="row">
+    <div class="col-md-5">
+        @using (Html.BeginForm(actionName: "EditContact", controllerName: "Contacts", method: FormMethod.Post,
+            htmlAttributes: new { @enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" name="editContactId" value="@Model.Id" />
+
+            <div>
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.FirstName, htmlAttributes: new { @class = "control-label" })
+                    <div>
+                        @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled"} })
+                        @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.LastName, htmlAttributes: new { @class = "control-label" })
+                    <div>
+                        @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
+                        @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.DateOfBirth, htmlAttributes: new { @class = "control-label" })
+                    <div>
+                        @Html.EditorFor(model => model.DateOfBirth, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
+                        @Html.ValidationMessageFor(model => model.DateOfBirth, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Location, htmlAttributes: new { @class = "control-label" })
+                    <div>
+                        @Html.EditorFor(model => model.Location, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
+                        @Html.ValidationMessageFor(model => model.Location, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Email, htmlAttributes: new { @class = "control-label" })
+                    <div>
+                        @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
+                        @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Phone, htmlAttributes: new { @class = "control-label" })
+                    <div>
+                        @Html.EditorFor(model => model.Phone, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
+                        @Html.ValidationMessageFor(model => model.Phone, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.LinkedIn, htmlAttributes: new { @class = "control-label" })
+                    <div>
+                        @Html.EditorFor(model => model.LinkedIn, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
+                        @Html.ValidationMessageFor(model => model.LinkedIn, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.CurrentWorkplace, htmlAttributes: new { @class = "control-label" })
+                    <div>
+                        @Html.EditorFor(model => model.CurrentWorkplace, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
+                        @Html.ValidationMessageFor(model => model.CurrentWorkplace, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="control-label">CV</label>
+                    <div>
+                        <input id="CV" class="form-control" type="file" name="CV" onchange="writeCVInfo(this)" />
+                        @if (Model.CVContent != null)
+                        {
+                            <a id="openCVButton" class="btn btn-primary" href="@Url.Action("OpenContactCV", "Contacts", new { Id = Model.Id })" target="_blank">
+                                <span class="glyphicon glyphicon-eye-open"></span>
+                                <span>Pogledaj CV</span>
+                            </a>
+                        }
+                        @if (login.Role <= UserLevel.HR)
+                        {
+                            <button id="editCVButton" class="btn btn-primary" type="button" onclick="selectCV()">
+                                <span class="glyphicon glyphicon-paperclip"></span>
+                                <span>@((Model.CVContent == null) ? "Dodaj CV" : "Izmeni CV")</span>
+                            </button>
+                        }
+                        <label class="control-label" id="CVFilename"></label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Seniority, htmlAttributes: new { @class = "control-label" })
+                    <div>
+                        @{ int selSen = (int)(Model.Seniority); }
+                        <select class="form-control" name="Seniority" size="1" disabled="disabled">
+                            @{ Array seniorities = Enum.GetValues(typeof(SeniorityLevel)); }
+                            @foreach (SeniorityLevel sen in seniorities)
+                            {
+                                <option value="@((int)sen)" selected="@((int)sen == selSen ? true : false)">@sen</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Technologies, htmlAttributes: new { @class = "control-label" })
+                    <div class="techInputs">
+                        <select class="form-control" name="Technologies" size="8" disabled="disabled" multiple>
+                            <option value="">Odaberi tehnologije</option>
+                            @{
+                                ICollection<Technology> allTech = null;
+                                ICollection<Technology> contactTech = null;
+                                using (HFContext hfdb = new HFContext())
+                                {
+                                    allTech = hfdb.Technologies.ToList();
+                                    Contact eCont = hfdb.Contacts.Find(Model.Id);
+
+                                    contactTech = eCont.Technologies;
+                                }
+                            }
+                            @foreach (Technology cTech in contactTech)
+                            {
+                                <option value="@cTech.Id" selected>@cTech.Name</option>
+                                allTech.Remove(cTech);
+                            }
+                            @foreach (Technology aTech in allTech)
+                            {
+                                <option value="@aTech.Id">@aTech.Name</option>
+                            }
+                        </select>
+                        <input class="form-control" type="text" name="newTechName" placeholder="Dodaj novu tehnologiju..." disabled="disabled" />
+                        <button class="btn btn-sm btn-success" type="button" onclick="addNewTechnology()" disabled="disabled">
+                            <span class="glyphicon glyphicon-plus"></span>
+                            <span>Dodaj</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group confirmButtonContainer">
+                    <a class="btn btn-default"
+                        href="@Url.Action("ContactMgmt", "Contacts")">
+                        <span class="glyphicon glyphicon-arrow-left"></span>
+                        <span>Nazad</span>
+                    </a>
+                    @if (login.Role <= UserLevel.HR)
+                    {
+                        <button id="editStartButton" class="btn btn-primary" type="button" onclick="editMode()">
+                            <span class="glyphicon glyphicon-edit"></span>
+                            <span>Izmeni</span>
+                        </button>
+                        <button id="editButton" class="btn btn-success" type="button" onclick="editModal()" >
+                            <span class="glyphicon glyphicon-arrow-right"></span>
+                            <span>Sačuvaj</span>
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- MODALNA FORMA ZA POTVRDU IZMENA -->
+            <div id="modalEdit" class="modal fade" role="dialog">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button class="close" type="button" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Izmena kontakta</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>Da li ste sigurni da želite da sačuvate ove izmene?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-default" type="button" data-dismiss="modal">Ne</button>
+                            <button class="btn btn-success" type="submit">
+                                <span class="glyphicon glyphicon-floppy-save"></span>
+                                <span>Sačuvaj</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="col-md-7">
+        <div>
+            @using (Html.BeginForm(actionName: "PostContactComment", controllerName: "Annotations"))
+            {
+                @Html.AntiForgeryToken();
+
+                <input type="hidden" name="commentContactId" value="@Model.Id" />
+                <input type="hidden" name="commentAuthorId" value="@login.Id" />
+
+                if (login.Role <= UserLevel.HR)
+                {
+                    Html.RenderAction("PostContactComment", "Annotations");
+                }
+            }
+            @{ Html.RenderPartial("~/Views/Annotations/ContactCommentsList.cshtml"); } 
+        </div>
+    </div>
+</div>
+
+<div class="modalTableContainer">
+    <table id="contact-process-table" class="table table-hover table-striped table-condensed">
+        <!-- ovde crta datatable -->
+    </table>
+</div>
+
+@section Scripts 
+{
+
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/flatpickr")
+    @Scripts.Render("~/bundles/selectric")
+
+    @Scripts.Render("~/bundles/usercontact")
+
+    <script type="text/javascript">
+
+        $(document).ready(() => {
+            $('#editButton').hide();
+            $('#CV').hide();
+            $('#editCVButton').hide();
+
+            let dateOfBirth = '@(Model.DateOfBirth.ToString("dd.MM.yyyy."))';
+
+            $('#DateOfBirth').flatpickr({
+                dateFormat: "d.m.Y.",
+                defaultDate: dateOfBirth,
+                minDate: "01.01.1900.",
+                maxDate: "today",
+                defaultDate: "01.01.1990.",
+                locale: "sr"
+            });
+
+            initContactSelectric();
+        });
+        
+        function commentDetailsModal(e) {
+            let commentId = e.id;
+            let message = $('p#' + commentId).html();
+            let authTime = $('span#' + commentId + '.small').html();
+            $('#modalCommentDetails .modal-body').html('<p>' + message + '</p><p>' + authTime + '</p>');
+            $('#modalCommentDetails').modal("show");
+        }
+
+        let userId = @login.Id;
+        let userRole = @((int)login.Role);
+
+        var assetListComments;
+
+        $(document).ready(() => {
+            assetListComments = {
+                dt: null,
+                init: () => {
+                    dt = $('#contact-comment-table').DataTable({
+                        "serverSide": true,
+                        "processing": true,
+                        "autoWidth": false,
+                        "pagingType": "simple",
+                        "pageLength": 7, // eventualno 6
+                        "dom": 'ftp',
+                        "language": {
+                            "paginate": {
+                                "next": "<span>→</span>", //Sledeća
+                                "previous": "<span>←</span>" //Prethodna
+                            },
+                            "search": "<span>Pretraži komentare (po tekstu ili autoru komentara): <span>",
+                            "emptyTable": "Nema podataka za prikaz."
+                        },
+                        "ajax": {
+                            "url": "@Url.Action("GetContactCommentData", "Data")",
+                            "type": "POST",
+                            "data": (d) => {
+                                let cId = $('input[name=commentContactId]');
+                                d.contactId = parseInt(cId.val());
+                            },
+                            "dataSrc": (json) => {
+                                let comments = [];
+
+                                json.data.forEach((comment) => {
+                                    if (!comment.Hidden)
+                                        comments.push(comment);
+                                    else if (userRole <= 1)
+                                        comments.push(comment);
+                                });
+
+                                return comments;
+                            }
+                        },
+                        "columns": [
+                            {
+                                "searchable": true, "sortable": false,
+                                render: (data, type, row) => {
+                                    let contactCommentHtml = "<div class='" + (row.Hidden ? 'hiddenComment' : '') + "'>\
+                                                              <p id='" + row.Id + "'>" + row.Message + "</p>\
+                                                              <div class='commentDataContainer'>\
+                                                              <span id='" + row.Id + "' class='small'>Autor: " + row.AuthorText + ", " + row.Time + "</span>\
+                                                              <div class='btn-group btn-group-xs commentControlsContainer'>\
+                                                              <button id='" + row.Id + "' class='btn btn-info' type='button' onclick='commentDetailsModal(this)'>\
+                                                              <span class='glyphicon glyphicon-info-sign'></span></button>";
+
+                                    if (userId == row.AuthorId || userRole == 0)
+                                        contactCommentHtml += "<button id='" + row.Id + "' class='btn btn-primary' type='button' onclick='editCommentModal(this)'>\
+                                                               <span class='glyphicon glyphicon-edit'></span></button>\
+                                                               <button class='btn btn-danger' type='button' value='" + row.Id + "' onclick='deleteCommentModal(this)'>\
+                                                               <span class='glyphicon glyphicon-remove'></span></button>";
+
+                                    contactCommentHtml += "</div>" + (row.Hidden ? '<label class="hiddenCommentText">[Skriveni komentar]</label>' : '') + "</div></div>";
+
+                                    return contactCommentHtml;
+                                }
+                            }
+                        ]
+                    });
+                }
+            }
+
+            assetListComments.init();
+
+            $('#contact-comment-table thead').remove();
+        });
+
+    </script>
+
+    @if (login.Role <= UserLevel.HR)
+    {
+
+        <script type="text/javascript">
+
+            $(($) => {
+                $.validator.addMethod('date', (value, element) => {
+                    let day = parseInt(value.substring(0, 2));
+                    let dayValid = (day >= 1) && (day <= 31);
+                    let month = parseInt(value.substring(3, 5));
+                    let monthValid = (month >= 1) && (month <= 12);
+                    let year = parseInt(value.substring(6, 10));
+                    let yearValid = (year >= 1900) && (year <= 2100);
+                    let hour = parseInt(value.substring(12, 14));
+                    let hourValid = (hour >= 0) && (hour <= 23);
+                    let minute = parseInt(value.substring(15));
+                    let minuteValid = (minute >= 0) && (minute <= 59);
+                    let chars = (value.charAt(2) == '.') && (value.charAt(5) == '.') && (value.charAt(10) == '.');
+                    return this.optional(element) || (dayValid && monthValid && yearValid && chars);
+                });
+            });
+        
+            function editMode() {
+                $('.form-control').removeAttr('disabled');
+                $('.techInputs > button').removeAttr('disabled');
+                $('select[name=Seniority]').selectric('refresh');
+                $('select[name=Technologies]').selectric('refresh');
+                $('#editStartButton').hide();
+                $('#editButton').show();
+                $('#editCVButton').show();
+            }
+
+            function editModal() {
+                let errors = false;
+                $('div span.text-danger.field-validation-error').each((ind, elem) => {
+                    errors &= elem.html();
+                });
+                if (!errors)
+                    $('#modalEdit').modal("show");
+            }
+
+            function editCommentModal(e) {
+                let commentId = e.id;
+                let message = $('p#' + commentId).html();
+                $('input[name=editCommentId]').val(commentId);
+                $('#modalCommentEdit #editCommentField').html(message);
+                $('#modalCommentEdit').modal("show");
+            }
+
+            function deleteCommentModal(e) {
+                $('#modalDeleteComment a.btn.btn-danger').attr({ 'href': '../../Annotations/DeleteContactComment/' + e.value });
+                $('#modalDeleteComment').modal("show");
+            }
+
+            var assetListProcesses;
+
+            $(document).ready(() => {
+                assetListProcesses = {
+                    dt: null,
+                    init: () => {
+                        dt = $('#contact-process-table').DataTable({
+                            "serverSide": true,
+                            "processing": true,
+                            "autoWidth": false,
+                            "pageLength": 5,
+                            "dom": '<"row"ftp>',
+                            "language": {
+                                "paginate": {
+                                    "next": "<span>→</span>", //Sledeća
+                                    "previous": "<span>←</span>" //Prethodna
+                                },
+                                "search": "<span>Pretraži procese kontakta (po nazivu ili potrebnom iskustvu): <span>",
+                                "emptyTable": "Nema podataka za prikaz."
+                            },
+                            "ajax": {
+                                "url": "@Url.Action("GetContactProcessData", "Data")",
+                                "type": "POST",
+                                "data": (d) => {
+                                    let cId = $('input[name=commentContactId]');
+                                    d.contactId = parseInt(cId.val());
+                                },
+                                "dataSrc": (json) => {
+                                    json.data.forEach(row => {
+                                        if (row.EndDate === "...")
+                                            row.EndDate = "Nema";
+                                    });
+
+                                    return json.data;
+                                }
+                            },
+                            "columns": [
+                                { "title": "Naziv procesa", "data": "Name", "searchable": true, "sortable": true, "width": "35%" },
+                                { "title": "Potrebno iskustvo", "data": "Technologies", "searchable": true, "sortable": false, "width": "40%" },
+                                { "title": "Senioritet procesa", "data": "Seniority", "searchable": false, "sortable": true, "width": "11%" },
+                                { "title": "Godina", "data": "Year", "searchable": false, "sortable": true, "width": "5%" },
+                                {
+                                    "searchable": false, "sortable": false, "width": "9%",
+                                    render: (data, type, row) => {
+                                        let btnGroupHtml = "<div class='buttonGroupCenter'>\
+                                                            <div class='btn-group btn-group-sm'>\
+                                                            <a class='btn btn-primary' href='../../Processes/ProcessDetails/" + row.Id + "'>\
+                                                            <span class='glyphicon glyphicon-info-sign'></span>\
+                                                            <span>Info</span>";
+
+                                        if (row.EndDate === "Nema" && userRole <= 1)
+                                            btnGroupHtml += "<span> &amp;</span>\
+                                                             <span>Izmeni</span>\
+                                                             <span class='glyphicon glyphicon-edit'></span>";
+
+                                        btnGroupHtml += "</a></div></div>";
+
+                                        return btnGroupHtml;
+                                    }
+                                }
+                            ]
+                        });
+                    }
+                }
+
+                assetListProcesses.init();
+
+            });
+
+        </script>
+
+    }
+}

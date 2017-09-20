@@ -1,0 +1,149 @@
+﻿@using HiringFunnel.Web.ViewModels
+@model UserInfo
+
+@{ ViewBag.Title = "HiringFunnel - Novi korisnik"; }
+@using HiringFunnel.Data;
+@using HiringFunnel.Data.Models;
+@using HiringFunnel.Data.DAL;
+
+@Styles.Render("~/Content/selectric")
+
+@{ User login = Session["login"] as User; }
+
+<h3>Novi korisnik</h3>
+<hr />
+
+@using (Html.BeginForm(actionName: "NewUser", controllerName: "Users")) 
+{
+    @Html.AntiForgeryToken()
+    
+    <div class="form-horizontal formContainer">
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group">
+            @Html.LabelFor(model => model.FirstName, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.LastName, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Email, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Password, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.Password, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Password, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.ConfirmPassword, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.ConfirmPassword, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.ConfirmPassword, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Seniority, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                <select class="form-control" name="Seniority" size="1">
+                    @{ Array seniorities = Enum.GetValues(typeof(SeniorityLevel)); }
+                    @for (int i = 0; i < seniorities.Length; ++i)
+                    {
+                        SeniorityLevel sen = (SeniorityLevel)seniorities.GetValue(new[] { i });
+                        <option value="@((int)sen)" selected="@((i == 0 ? true : false))">@sen</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Role, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                <select class="form-control" name="Role" size="1">
+                    @{ Array roles = Enum.GetValues(typeof(UserLevel)); }
+                    @for (int i = 0; i < roles.Length; ++i)
+                    {
+                        UserLevel rol = (UserLevel)roles.GetValue(new[] { i });
+                        if (rol == UserLevel.Admin && login.Role == UserLevel.HR)
+                        {
+                            continue;
+                        }
+                        <option value="@((int)rol)" selected="@((i == 0) ? true : false)">@rol</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Technologies, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9 techInputs">
+                <select class="form-control" name="Technologies" multiple>
+                    @{
+                        ICollection<Technology> technologies = null;
+                        using (HFContext hfdb = new HFContext())
+                        {
+                            technologies = hfdb.Technologies.ToList();
+                        }
+
+                        <option value="">Odaberi tehnologije</option>
+                        foreach (Technology aTech in technologies)
+                        {
+                            <option value="@aTech.Id">@aTech.Name</option>
+                        }
+                    }
+                </select>
+                <input class="form-control" type="text" name="newTechName" placeholder="Dodaj novu tehnologiju..." />
+                <button class="btn btn-sm btn-success" type="button" onclick="addNewTechnology()">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    <span>Dodaj</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group confirmButtonContainer">
+            <a class="btn btn-default" href="@Url.Action("UserMgmt", "Users")">
+                <span class="glyphicon glyphicon-arrow-left"></span>
+                <span>Nazad</span>
+            </a>
+            <button class="btn btn-success" type="submit">
+                <span class="glyphicon glyphicon-check"></span>
+                <span>Dodaj</span>
+            </button>
+        </div>
+    </div>
+}
+
+@section Scripts 
+{
+    
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/selectric")
+
+    @Scripts.Render("~/bundles/usercontact")
+
+    <script type="text/javascript">
+
+        $(document).ready(() => {
+            initUserSelectric();
+        });
+
+    </script>
+
+}

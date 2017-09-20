@@ -1,0 +1,599 @@
+﻿
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: beige;
+    color: #003000;
+}
+
+.body-content {
+    max-width: 1650px;
+    margin-top: 40px;
+    padding-bottom: 10px;
+    font-size: 10pt;
+}
+
+.dl-horizontal dt {
+    margin-left: 0 !important;
+    width: 200px;
+    white-space: normal;
+}
+
+.dl-horizontal dd {
+    margin-left: 220px;
+}
+
+dl {
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.modal {
+    margin-top: 5%;
+}
+
+.navbar {
+    padding: 0 10px;
+    background-color: #003000;
+}
+
+.navbar-header > a,
+ul.navbar-nav > li > a {
+    transition: color 0.3s ease;
+    color: beige !important;
+}
+
+.navbar-header > a:hover,
+ul.navbar-nav > li > a:hover {
+    color: darkkhaki !important;
+}
+
+.form-group > div > input,
+.form-group > div > select {
+    height: 32px !important;
+}
+
+.form-group > div > textarea,
+.form-group > div > input,
+.form-group > div > select {
+    font-size: 9pt !important;
+}
+
+textarea {
+    min-width: 100%;
+}
+
+input,
+select {
+    max-width: 100%;
+}
+
+input,
+select,
+textarea,
+.toDoItem {
+    background-color: ghostwhite !important;
+}
+
+textarea {
+    min-height: 50px;
+    max-height: 150px;
+}
+
+hr {
+    margin: 10px 0;
+}
+
+h2 {
+    text-align: center;
+    font-weight: bold;
+}
+
+h3 {
+    text-align: left;
+    font-weight: bold;
+}
+
+h5 {
+    margin-top: 0;
+}
+
+.btn-group-sm {
+    line-height: 1.2 !important;
+}
+
+.pagination {
+    display: block;
+}
+
+button {
+    margin: 0 auto;
+
+    font-size: 14pt;
+}
+
+button.disabled,
+button:disabled,
+button[type=submit].disabled,
+.disabled > a,
+.disabled > a:focus,
+.disabled > a:hover {
+    cursor: default !important;
+}
+
+[disabled] {
+    cursor: default !important;
+}
+
+table {
+    table-layout: fixed;
+}
+
+table td {
+    vertical-align: middle !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+}
+
+.processDetailsTable {
+    float: right;
+    width: 41%;
+}
+
+.processDetailsContainer {
+    float: left;
+    width: 15%;
+}
+
+.processDetailsTable,
+.processDetailsContainer {
+    margin: 5px 3px;
+}
+
+.phaseColumnContainer {
+    clear: both;
+
+    max-width: 1600px;
+    height: 500px;
+
+    white-space: nowrap;
+    overflow-x: scroll;
+
+    margin: 20px auto;
+    padding: 5px;
+}
+
+.phaseColumn {
+    width: 200px;
+    height: 98.5%;
+    overflow-y: scroll;
+
+    padding: 3px;
+
+    background-color: floralwhite;
+}
+
+.phaseColumn,
+.toDoItem {
+    margin: 3px;
+}
+
+.phaseColumnHeader {
+    display: block;
+    float: left;
+
+    width: 96%;
+    height: auto;
+
+    margin: 0 5px;
+    padding: 0;
+}
+
+.phaseColumnHeader > h5,
+.phaseColumnHeader > hr {
+    margin: 3px 5px;
+}
+
+.phaseCardContainer {
+    width: 98%;
+    height: auto;
+}
+
+.phaseInfoCard {
+    display: block;
+    float: left;
+
+    width: 96%;
+    height: auto;
+
+    padding: 10px 0;
+    text-align: center;
+
+    border: 2px solid #003000;
+    border-radius: 5px;
+    
+    background-color: ghostwhite;
+    transition: background-color 0.3s ease;
+}
+
+.phaseColumnContainer,
+.phaseInfoCard:hover {
+    background-color:  honeydew;
+}
+
+.phaseInfoCard hr {
+    margin: 10px 5px;
+}
+
+.phaseInfoCard > label {
+    margin: 0 10px;
+    white-space: normal;
+
+    text-align: center;
+    cursor: pointer;
+}
+
+.pInstanceEditContainer {
+    display: inline-block;
+    float: left;
+
+    width: 65%;
+    margin: 10px 0;
+
+    background-color: honeydew;
+}
+
+.pInstanceEditContainer > button {
+    display: block;
+    width: 20%;
+    margin: 10px auto;
+}
+
+.pInstancePhaseEditContainer {
+    display: block;
+    width: 99%;
+
+    padding: 10px 20px;
+    margin: 5px auto;
+    
+    background-color: floralwhite;
+
+    visibility: visible;
+    transition: visibility 0.3s ease;
+}
+
+.pInstancePhaseEditContainer textarea {
+    max-width: 100%;
+}
+
+.toDoItemsInputs {
+    padding: 5px;
+}
+
+.toDoItemsContainer {
+    margin: 5px 0;
+    padding: 5px;
+}
+
+.toDoItem {
+    padding: 5px 10px;
+}
+
+.toDoItem > p,
+.toDoItem > div.checkbox {
+    margin-bottom: 5px;
+} 
+
+.modalTableContainer {
+    margin: 5px 15px;
+}
+
+.phaseInfoCard {
+    margin: 5px;
+}
+
+table.modalTable,
+table.modalTable textarea {
+    width: 100% !important;
+}
+
+.processInfoContainer {
+    height: auto !important;
+}
+
+.contactInfoContainer, .processInfoContainer {
+    padding: 5px 0px;
+}
+
+.buttonGroupCenter {
+    display: block;
+
+    text-align: center;
+    margin: 0;
+}
+
+.contactInfoButtonsContainer {
+    margin: 5px auto;
+    margin-bottom: 0px;
+}
+
+.toDoItemsInputs button {
+    display: block;
+    margin: 0 auto;
+}
+
+.toDoItemsInputs button {
+    width: 50%;
+}
+
+.toDoItemsInputs textarea {
+    display: block;
+
+    min-width: 90%;
+    max-width: 90%;
+
+    margin: 5px auto;
+}
+
+.sideContainer {
+    display: inline-block;
+    float: right;
+
+    width: 34%;
+    margin: 10px 0;
+    padding: 5px 10px;
+
+    background-color: honeydew;
+}
+
+.sideContainer > hr {
+    margin: 5px 0;
+}
+
+.btn.btn-danger,
+.btn.btn-success,
+.btn.btn-primary,
+.btn.btn-info,
+.btn.btn-warning {
+    transition: all 0.3s ease;
+}
+
+.btn-default {
+    transition: background-color 0.3s ease;
+}
+
+ul.pagination > li > a > span,
+ul.pagination > li > a > span:hover {
+    transition: none;
+}
+
+ul.pagination > li.paginate_button_active > a:hover,
+ul.pagination > li.paginate_button_active > a:active {
+    color: ghostwhite !important;
+}
+
+ul.pagination > li.paginate_button_active > a:active {
+    transition: none !important;
+}
+
+.hiddenComment {
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif; 
+}
+
+.commentDataContainer {
+    white-space: normal;
+    margin-top: 3px;
+}
+
+.hiddenCommentText {
+    float: right;
+    margin-right: 10px;
+    color: darkred;
+}
+
+.commentControlsContainer {
+    float: right;
+}
+
+tr.odd, tr.even {
+    transition: background-color 0.3s ease;
+}
+
+tr.even {
+    background-color: lightyellow !important;
+}
+
+tr.odd:hover, tr.even:hover {
+    background-color: honeydew !important;
+}
+
+.btn:hover {
+    color: beige;
+}
+
+.phaseInfoCard > label,
+.btn,
+.btn-default:hover,
+.btn-default:active,
+.btn:disabled,
+.btn:disabled:hover,
+.btn:disabled:active,
+ul.pagination > li > a > span,
+ul.pagination > li > a > span:hover {
+    color: #003000;
+}
+
+#candidate-for-process-table > thead,
+#contacted-for-process-table > thead {
+    font-size: 9pt;
+}
+
+#candidate-for-process-table,
+#contacted-for-process-table {
+    font-size: 8pt;
+}
+
+.dataTables_filter {
+    width: 100%;
+}
+
+.dataTables_filter label {
+    font-size: 9pt;
+}
+
+.dataTables_paginate {
+    margin: 5px 0;
+}
+
+.metricsDataContainer,
+.metricsGlobalContainer {
+    padding: 5px 10px;
+}
+
+.phaseColumn,
+.metricsDataContainer > label,
+.metricsGlobalContainer > label {
+    display: inline-block;
+}
+
+.metricsGlobalContainer > select,
+.metricsControlsContainer > select,
+.dataTables_filter label, .metricsResult,
+.metricsResultContainer > label {
+    display: inline;
+}
+
+.metricsGlobalContainer > select,
+.metricsControlsContainer > select,
+.form-horizontal button,
+.confirmButtonContainer {
+    width: auto;
+}
+
+.metricsControlsContainer {
+    text-align: center;
+}
+
+.metricsResultContainer {
+    text-align: center;
+    margin: 2px 0;
+}
+
+.metricsResultContainer > label {
+    line-height: 100%;
+}
+
+.metricsResultContainer > button {
+    margin: 1px 3px;
+}
+
+.metricsResult {
+    text-align: right;
+}
+
+.formContainer {
+    width: 50%;
+    margin: 0 auto;
+}
+
+.confirmButtonContainer {
+    float: right;
+}
+
+.popover {
+    width: 500px;
+    max-width: 500px;
+}
+
+hr,
+.phaseColumnContainer,
+.phaseColumn,
+.pInstanceEditContainer,
+.pInstancePhaseEditContainer,
+.sideContainer,
+.toDoItem {
+    border: 1px solid #003000;
+    border-radius: 5px;
+}
+
+.loginErrorText {
+    margin: 10px;
+    text-align: center;
+}
+
+.loginErrorText > label {
+    color: darkred;
+}
+
+.form-group {
+    margin-bottom: 5px;
+}
+
+.form-control[type=checkbox] {
+    width: auto;
+    height: auto;
+}
+
+.techInputs > input {
+    display: inline;
+    width: 80%;
+    margin: 3px 0;
+}
+
+.techInputs > button {
+    float: right;
+    height: 32px;
+    width: 19%;
+    margin: 3px 0;
+}
+
+.hideCommentCheckbox {
+    display: inline;
+    margin : 5px 10px;
+    float: left;
+}
+
+.contactComments {
+    clear: both;
+}
+
+.newProcessFormContainer {
+    padding: 5px 15px;
+}
+
+.commentButtonContainer {
+    float: right;
+}
+
+.processInstancePropertyCheckbox:first-child {
+    margin-top: 20px;
+}
+
+.interviewControlsContainer {
+    display: block;
+    margin: 0;
+}
+
+.interviewControlsContainer > label:first-child {
+    float: left;
+    width: 70%;
+}
+
+.interviewControlsContainer > label:nth-child(2) {
+    float: right;
+    width: 25%;
+}
+
+.interviewControlsContainer input {
+    height: 30px;
+}
+
+.form-control[disabled] {
+    opacity: 0.5;
+}
+
+/*
+    new form container, centrirati ili blago centrirati?
+    prepraviti metrics select pravila tako da radi za selectric
+
+    srediti ovaj css sto bolje!
+*/

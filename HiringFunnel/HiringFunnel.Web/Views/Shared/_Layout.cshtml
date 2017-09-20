@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title</title>
+    @Styles.Render("~/Content/css")
+    @Styles.Render("~/Content/datatables/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+    @using HiringFunnel.Data.Models
+    @using HiringFunnel.Data
+    @{ User login = Session["login"] as User; }
+
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                @Html.ActionLink("HiringFunnel", "ProcessMgmt", "Processes", new { area = "" }, new { @class = "navbar-brand" })
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    @if (login.Role <= UserLevel.HR)
+                    {
+                        <li>@Html.ActionLink("Upravljanje kontaktima", "ContactMgmt", "Contacts")</li>
+                    }
+                    <li>@Html.ActionLink("Upravljanje procesima", "ProcessMgmt", "Processes")</li>
+                    @if (login.Role <= UserLevel.HR)
+                    {
+                        <li>@Html.ActionLink("Upravljanje korisnicima", "UserMgmt", "Users")</li>
+                        <li>@Html.ActionLink("Metrika procesa", "ViewMetrics", "Metrics")</li>
+                    }
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="@Url.Action("UserDetails", "Users", new { Id = login.Id })">Korisnik: @login.FirstName @login.LastName (@login.Email) - @login.Role.ToString()</a></li>
+                    <li>@Html.ActionLink("Izlaz", "Logout", "Auth")</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid body-content">
+        @RenderBody()
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/datatables")
+    @RenderSection("scripts", required: false)
+</body>
+</html>

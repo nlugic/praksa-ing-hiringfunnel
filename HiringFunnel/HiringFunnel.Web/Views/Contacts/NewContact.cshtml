@@ -1,0 +1,192 @@
+﻿@using HiringFunnel.Web.ViewModels
+@model ContactInfo
+
+@{ ViewBag.Title = "HiringFunnel - Novi kontakt"; }
+@using HiringFunnel.Data;
+@using HiringFunnel.Data.Models;
+@using HiringFunnel.Data.DAL;
+
+@Styles.Render("~/Content/flatpickr")
+@Styles.Render("~/Content/selectric")
+
+<h3>Novi kontakt</h3>
+<hr />
+
+@using (Html.BeginForm(actionName: "NewContact", controllerName: "Contacts", method: FormMethod.Post, 
+    htmlAttributes: new { @enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    
+    <div class="form-horizontal formContainer">
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.FirstName, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.LastName, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.DateOfBirth, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.DateOfBirth, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.DateOfBirth, "", new { @clas = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Location, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.Location, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Location, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Email, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Phone, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.Phone, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Phone, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.LinkedIn, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.LinkedIn, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.LinkedIn, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.CurrentWorkplace, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                @Html.EditorFor(model => model.CurrentWorkplace, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.CurrentWorkplace, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="control-label col-md-3">CV</label>
+            <div class="col-md-9">
+                <input id="CV" class="form-control" type="file" name="CV" onchange="writeCVInfo(this)"/>
+                <button id="editCVButton" class="btn btn-primary" type="button" onclick="selectCV()">
+                    <span class="glyphicon glyphicon-paperclip"></span>
+                    <span>Dodaj CV</span>
+                </button>
+                <label class="control-label" id="CVFilename"></label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Seniority, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9">
+                <select class="form-control" name="Seniority">
+                    @{ Array seniorities = Enum.GetValues(typeof(SeniorityLevel)); }
+                    @for (int i = 0; i < seniorities.Length; ++i)
+                    {
+                        SeniorityLevel sen = (SeniorityLevel)seniorities.GetValue(new[] { i });
+                        <option value="@((int)sen)" selected="@((i == 0) ? true : false)">@sen</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Technologies, htmlAttributes: new { @class = "control-label col-md-3" })
+            <div class="col-md-9 techInputs">
+                <select class="form-control" name="Technologies" multiple>
+                    <option value="">Odaberi tehnologije</option>
+                    @{
+                        ICollection<Technology> technologies = null;
+                        using (HFContext hfdb = new HFContext())
+                        {
+                            technologies = hfdb.Technologies.ToList();
+                        }
+
+                        foreach (Technology aTech in technologies)
+                        {
+                            <option value="@aTech.Id">@aTech.Name</option>
+                        }
+                    }
+                </select>
+                <input class="form-control" type="text" name="newTechName" placeholder="Dodaj novu tehnologiju..." />
+                <button class="btn btn-sm btn-success" type="button" onclick="addNewTechnology()">
+                    <span class="glyphicon glyphicon-plus"></span>
+                    <span>Dodaj</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group confirmButtonContainer">
+            <a class="btn btn-default" href="@Url.Action("ContactMgmt", "Contacts")">
+                <span class="glyphicon glyphicon-arrow-left"></span>
+                <span>Nazad</span>
+            </a>
+            <button class="btn btn-success" type="submit">
+                <span class="glyphicon glyphicon-check"></span>
+                <span>Dodaj</span>
+            </button>
+        </div>
+    </div>
+}
+
+@section Scripts
+{
+
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/flatpickr")
+    @Scripts.Render("~/bundles/selectric")
+
+    @Scripts.Render("~/bundles/usercontact")
+
+    <script type="text/javascript">
+
+        $(($) => {
+            $.validator.addMethod('date', (value, element) => {
+                let day = parseInt(value.substring(0, 2));
+                let dayValid = (day >= 1) && (day <= 31);
+                let month = parseInt(value.substring(3, 5));
+                let monthValid = (month >= 1) && (month <= 12);
+                let year = parseInt(value.substring(6, 10));
+                let yearValid = (year >= 1900) && (year <= 2100);
+                let dots = (value.charAt(2) == '.') && (value.charAt(5) == '.') && (value.charAt(10) == '.');
+                return (dayValid && monthValid && yearValid && dots);
+            });
+        });
+
+        $(document).ready(() => {
+            $('#CV').hide();
+
+            $('#DateOfBirth').flatpickr({
+                dateFormat: "d.m.Y.",
+                defaultDate: "01.01.1990.",
+                minDate: "01.01.1900.",
+                maxDate: "today",
+                locale: "sr"
+            });
+
+            initContactSelectric();
+        });
+
+    </script>
+
+}

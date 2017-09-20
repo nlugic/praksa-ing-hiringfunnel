@@ -1,0 +1,572 @@
+﻿@model HiringFunnel.Web.ViewModels.ProcessInfo
+
+@{ ViewBag.Title = "HiringFunnel - Podaci o procesu & upravljanje kandidatima"; }
+@using System.Collections.ObjectModel;
+@using HiringFunnel.Data
+@using HiringFunnel.Data.Models
+@using HiringFunnel.Data.DAL
+
+@Styles.Render("~/Content/selectric")
+
+@{ User login = Session["login"] as User; }
+
+<h3>Podaci o procesu &amp; upravljanje kandidatima</h3>
+<hr />
+
+<div>
+    @using (Html.BeginForm(actionName: "EditProcess", controllerName: "Processes"))
+    {
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" name="detailProcessId" value="@Model.Id" />
+
+        <div class="processDetailsContainer">
+            <h4>Podaci</h4>
+            <hr />
+
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label" })
+                <div>
+                    @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", @disabled = "disabled" } })
+                    @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Technologies, htmlAttributes: new { @class = "control-label" })
+                <div class="techInputs">
+                    <select class="form-control" name="Technologies" disabled="disabled" multiple>
+                        <option value="">Odaberi tehnologije</option>
+                        @if (Model.Technologies != string.Empty)
+                        {
+                            ICollection<Technology> allTech = null;
+                            ICollection<Technology> processTech = new Collection<Technology>();
+                            using (HFContext hfdb = new HFContext())
+                            {
+                                allTech = hfdb.Technologies.ToList();
+                                Process eProc = hfdb.Processes.Find(Model.Id);
+
+                                string[] pTechNames = Model.Technologies.Split(',');
+
+                                foreach (string pTechName in pTechNames)
+                                {
+                                    Technology pTech = (from tech in hfdb.Technologies
+                                                        where tech.Name == pTechName.TrimStart()
+                                                        select tech).SingleOrDefault();
+
+                                    processTech.Add(pTech);
+                                }
+                            }
+                            foreach (Technology pTech in processTech)
+                            {
+                                <option value="@pTech.Id" selected>@pTech.Name</option>
+                                allTech.Remove(pTech);
+                            }
+                            foreach (Technology aTech in allTech)
+                            {
+                                <option value="@aTech.Id">@aTech.Name</option>
+                            }
+                        }
+                    </select>
+                    <input class="form-control" type="text" name="newTechName" placeholder="Dodaj novu tehnologiju..." disabled="disabled"/>
+                    <button class="btn btn-sm btn-success" type="button" onclick="addNewTechnology()" disabled="disabled"><span class="glyphicon glyphicon-plus"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Seniority, htmlAttributes: new { @class = "control-label" })
+                <div>
+                    @{ int selSen = (int)(Model.Seniority); }
+                    <select class="form-control" name="Seniority" size="1" disabled="disabled">
+                        @{ Array seniorities = Enum.GetValues(typeof(SeniorityLevel)); }
+                        @foreach (SeniorityLevel sen in seniorities)
+                        {
+                            <option value="@((int)sen)" selected="@((int)sen == selSen ? true : false)">@sen</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group buttonGroupCenter">
+                <a class="btn btn-sm btn-default" href="@Url.Action("ProcessMgmt", "Processes")">
+                    <span class="glyphicon glyphicon-arrow-left"></span>
+                    <span>Nazad</span>
+                </a>
+                @if (login.Role <= UserLevel.HR)
+                {
+                    <button id="editStartButton" class="btn btn-sm btn-primary" type="button" onclick="editMode()" disabled="@ViewBag.processEdit">
+                        <span class="glyphicon glyphicon-edit"></span>
+                        <span>Izmeni</span>
+                    </button>
+                    <button id="editButton" class="btn btn-sm btn-success" type="button" onclick="editModal()">
+                        <span class="glyphicon glyphicon-arrow-right"></span>
+                        <span>Sačuvaj</span>
+                    </button>
+                }
+            </div>
+            <div class="form-group buttonGroupCenter">
+                @if (login.Role <= UserLevel.HR && Model.EndDate == null)
+                {
+                    <button class='btn btn-danger' type="button" value='@Model.Id' onclick='endProcessModal(this)'>
+                        <span class='glyphicon glyphicon-off'></span>
+                        <span>Završi proces</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- MODALNA FORMA ZA POTVRDJIVANJE IZMENA -->
+        <div id="modalEdit" class="modal fade" role="dialog">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button class="close" type="button" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Izmena procesa</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>Da li ste sigurni da želite da sačuvate ove izmene?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-default" type="button" data-dismiss="modal">Ne</button>
+                        <button class="btn btn-success" type="submit">
+                            <span class="glyphicon glyphicon-check"></span>
+                            <span>Sačuvaj</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="processDetailsTable">
+        <h5>Kontakti procesa</h5>
+        <hr />
+
+        <table id="contacted-for-process-table" class="table table-hover table-striped table-condensed">
+            <!-- ovde datatable crta tabelu kontakata koji su odabrani za ucesce u procesu -->
+        </table>
+    </div>
+
+    <div class="processDetailsTable">
+        <h5>Kandidati za proces</h5>
+        <hr />
+
+        <table id="candidate-for-process-table" class="table table-hover table-striped table-condensed">
+            <!-- ovde datatables crta tabelu kontakata koji nisu u procesu -->
+        </table>
+    </div>
+</div>
+
+<div class="phaseColumnContainer">
+    <div id="Contact_Phase" class="phaseColumn" ondrop="drop(event, this)" ondragover="allowDrop(event)">
+        <div class="phaseColumnHeader">
+            <h5>Kontakti</h5>
+            <hr />
+        </div>
+        <div class="phaseCardContainer"></div>
+    </div>
+    <div id="Interview_Phase" class="phaseColumn" ondrop="drop(event, this)" ondragover="allowDrop(event)">  
+        <div class="phaseColumnHeader">
+            <h5>Intervjui</h5>
+            <hr />
+        </div>
+        <div class="phaseCardContainer"></div>
+    </div>
+    <div id="Test_Phase" class="phaseColumn" ondrop="drop(event, this)" ondragover="allowDrop(event)">
+        <div class="phaseColumnHeader">
+            <h5>Testovi</h5>
+            <hr />
+        </div>
+        <div class="phaseCardContainer"></div>
+    </div>
+    <div id="TestDefense_Phase" class="phaseColumn" ondrop="drop(event, this)" ondragover="allowDrop(event)">
+        <div class="phaseColumnHeader">
+            <h5>Odbrane testa</h5>
+            <hr />
+        </div>
+        <div class="phaseCardContainer"></div>
+    </div>
+    <div id="Offer_Phase" class="phaseColumn" ondrop="drop(event, this)" ondragover="allowDrop(event)">
+        <div class="phaseColumnHeader">
+            <h5>Ponude</h5>
+            <hr />
+        </div>
+        <div class="phaseCardContainer"></div>
+    </div>
+    <div id="Acceptance_Phase" class="phaseColumn" ondrop="drop(event, this)" ondragover="allowDrop(event)">
+        <div class="phaseColumnHeader">
+            <h5>Primljeni</h5>
+            <hr />
+        </div>
+        <div class="phaseCardContainer"></div>
+    </div>
+    <div id="Rejection_Phase" class="phaseColumn" ondrop="drop(event, this)" ondragover="allowDrop(event)">
+        <div class="phaseColumnHeader">
+            <h5>Odbijeni</h5>
+            <hr />
+        </div>
+        <div class="phaseCardContainer"></div>
+    </div>
+    <div id="Quit_Phase" class="phaseColumn" ondrop="drop(event, this)" ondragover="allowDrop(event)">
+        <div class="phaseColumnHeader">
+            <h5>Odustali</h5>
+            <hr />
+        </div>
+        <div class="phaseCardContainer"></div>
+    </div>
+</div>
+
+<!-- MODALNA FORMA ZA POTVRDU ZAVRSETKA PROCESA -->
+<div id="modalEndProcess" class="modal fade">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="close" type="button" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Završi proces</h4>
+            </div>
+            <div class="modal-body">
+                <p>Da li ste sigurni da želite da završite ovaj proces?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" type="button" data-dismiss="modal">Ne</button>
+                <button class="btn btn-warning" type="button" data-dismiss="modal" onclick="endProcess(this)">
+                    <span class="glyphicon glyphicon-off"></span>
+                    <span>Završi</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/selectric")
+
+    <script type="text/javascript">
+
+        $(document).ready(() => {
+            $('#editButton').hide();
+
+            $('select[name=Technologies]').selectric({
+                maxHeight: 200,
+                responsive: true,
+                preventWindowScroll: true,
+                inheritOriginalWidth: true,
+            });
+
+            $('select[name=Seniority]').selectric({
+                maxHeight: 200,
+                responsive: true,
+                preventWindowScroll: true,
+                inheritOriginalWidth: true,
+            });
+
+            loadProcessPhases();
+        });
+
+        function editMode() {
+            $('.form-control').removeAttr('disabled');
+            $('.techInputs > button').removeAttr('disabled');
+            $('select[name=Technologies]').selectric('refresh');
+            $('select[name=Seniority]').selectric('refresh');
+            $('#editStartButton').hide();
+            $('#editButton').show();
+        }
+
+        function editModal() {
+            let errors = false;
+            $('div span.text-danger.field-validation-error').each((ind, elem) => {
+                errors &= elem.html();
+            });
+            if (!errors)
+                $('#modalEdit').modal("show");
+        }
+
+        function endProcessModal(e) {
+            let processId = e.value;
+
+            $('#modalEndProcess .btn.btn-warning').val(processId);
+            $('#modalEndProcess').modal("show");
+        }
+
+        function endProcess(e) {
+            let processId = e.value;
+
+            $.ajax({
+                url: '@Url.Action("EndProcess", "Processes")',
+                type: 'POST',
+                data: {
+                    'processId': processId
+                },
+                success: () => {
+                    $('a[href="ProcessDetails/' + processId + '"]').html("<span class='glyphicon glyphicon-info-sign'></span>\
+                                                                          <span>Info</span>");
+                    $('#process-mgmt-table .btn.btn-danger[value=' + processId + ']').remove();
+                    window.location.reload();
+                }
+            });
+        }
+
+        function addCandidateToContacts(e) {
+            let cId = e.value;
+            let pId = $('input[name=detailProcessId]');
+            $.ajax({
+                url: '@Url.Action("AddCandidateToContacts", "ProcessInstances")',
+                type: 'POST',
+                data: {
+                    'candidateId': cId,
+                    'processId': pId.val()
+                },
+                success: () => {
+                    $('#candidate-for-process-table').DataTable().ajax.reload();
+                    $('#contacted-for-process-table').DataTable().ajax.reload();
+                }
+            });
+        }
+
+        function drag(e) {
+            e.dataTransfer.setData("text", e.target.id);
+        }
+
+        function allowDrop(e) {
+            e.preventDefault();
+        }
+
+        function drop(e, element) {
+            e.preventDefault();
+            let cardId = e.dataTransfer.getData("text");
+            let newPhase = element.id;
+
+            if ($('#' + newPhase + ' > .phaseCardContainer').get(0) === $('#' + cardId).parent().get(0))
+                return;
+
+            $.ajax({
+                url: '@Url.Action("SetPhase", "ProcessInstances")',
+                type: 'POST',
+                data: {
+                    'processInstanceId': cardId,
+                    'newPhase': newPhase,
+                    'userId': userId
+                },
+                success: () => {
+                    $('#' + newPhase + ' > .phaseCardContainer').prepend($('#' + cardId));
+                }
+            });
+        }
+
+        function contactCandidate(e) {
+            let cId = e.value;
+            let pId = $('input[name=detailProcessId]');
+
+            $.ajax({
+                url: '@Url.Action("ContactCandidate", "ProcessInstances")',
+                type: 'POST',
+                data: {
+                    'candidateId': cId,
+                    'processId': pId.val()
+                },
+                success: (response) => {
+                    let row = $('button[value=' + cId + ']').parents('tr')[0];
+                    let data = $('#contacted-for-process-table').DataTable().row(row).data();
+
+                    $('#contacted-for-process-table').DataTable().ajax.reload();
+
+                    $.ajax({
+                        url: '@Url.Action("GetProcessInstanceId", "ProcessInstances")',
+                        type: 'POST',
+                        data: {
+                            'contactId': cId,
+                            'processId': pId.val()
+                        },
+                        success: (response) => {
+                            $('#Contact_Phase > .phaseCardContainer').prepend("<a id='" + response.pInsId + "' href='../../ProcessInstances/ProcessInstanceDetails/"
+                                                                                    + response.pInsId + "' draggable='true' ondragstart='drag(event)'>\
+                                                                                <div class='phaseInfoCard'>\
+                                                                                    <label>" + data.FirstName + "</label>\
+                                                                                    <br />\
+                                                                                    <label>" + data.Seniority + "</label>\
+                                                                                    <hr />\
+                                                                                    <label>" + data.Technologies + "</label>\
+                                                                                </div>\
+                                                                               </a>");
+                        }
+                    });
+                }
+            });
+        }
+
+        function loadProcessPhases() {
+            let pId = $('input[name=detailProcessId]');
+
+            function printDiv(data) {
+                let endDate = '@Model.EndDate.ToString()';
+
+                return "<a id='" + data.Id + "' href='../../ProcessInstances/ProcessInstanceDetails/" + data.Id + 
+                                "' draggable=" + (!endDate ? 'true' : 'false') + " ondragstart='drag(event)'>\
+                            <div class='phaseInfoCard'>\
+                                <label>" + data.ContactName + "</label>\
+                                <br />\
+                                <label>" + data.ContactSeniority + "</label>\
+                                <hr />\
+                                <label>" + data.ContactTechnologies + "</label>\
+                            </div>\
+                        </a>";
+            }
+
+            $.ajax({
+                url: '@Url.Action("GetInstancesData", "ProcessInstances")',
+                type: 'POST',
+                data: {
+                    'processId': pId.val()
+                },
+                success: (response) => {
+                    let contactDiv = $('#Contact_Phase > .phaseCardContainer');
+                    let interviewDiv = $('#Interview_Phase > .phaseCardContainer');
+                    let testDiv = $('#Test_Phase > .phaseCardContainer');
+                    let testDefenseDiv = $('#TestDefense_Phase > .phaseCardContainer');
+                    let offerDiv = $('#Offer_Phase > .phaseCardContainer');
+                    let acceptDiv = $('#Acceptance_Phase > .phaseCardContainer');
+                    let rejectDiv = $('#Rejection_Phase > .phaseCardContainer');
+                    let quitDiv = $('#Quit_Phase > .phaseCardContainer');
+
+                    response.Contacts.forEach(ph => contactDiv.prepend(printDiv(ph)) );
+                    response.Interviews.forEach(ph => interviewDiv.prepend(printDiv(ph)) );
+                    response.Tests.forEach(ph => testDiv.prepend(printDiv(ph)) );
+                    response.TestDefenses.forEach(ph => testDefenseDiv.prepend(printDiv(ph)) );
+                    response.Offers.forEach(ph => offerDiv.prepend(printDiv(ph)) );
+                    response.Accepts.forEach(ph => acceptDiv.prepend(printDiv(ph)) );
+                    response.Rejects.forEach(ph => rejectDiv.prepend(printDiv(ph)) );
+                    response.Quits.forEach(ph => quitDiv.prepend(printDiv(ph)) );
+                }
+            });
+        }
+
+        let userId = @login.Id;
+        let userRole = @((int)login.Role);
+
+        var assetListCandidates;
+
+        $(() => {
+            assetListCandidates = {
+                dt: null,
+                init: () => {
+                    dt = $('#candidate-for-process-table').DataTable({
+                        "serverSide": true,
+                        "processing": true,
+                        "autoWidth": false,
+                        "pageLength": 10,
+                        "dom": 'ftp',
+                        "language": {
+                            "paginate": {
+                                "next": "<span>→</span>", //Sledeća
+                                "previous": "<span>←</span>" //Prethodna
+                            },
+                            "search": "<span>Pretraži kandidate (po imenu, e-mail adresi ili iskustvu): <span>",
+                            "emptyTable": "Nema podataka za prikaz."
+                        },
+                        "ajax": {
+                            "url": "@Url.Action("GetProcessCandidates", "Data")",
+                            "type": "POST",
+                            "data": (d) => {
+                                let pId = $('input[name=detailProcessId]');
+                                d.processId = parseInt(pId.val());
+                            }
+                        },
+                        "columns": [
+                            { "title": "Ime i prezime", "data": "FirstName", "searchable": true, "sortable": true, "width": "21%" },
+                            { "title": "E-mail adresa", "data": "Email", "searchable": true, "sortable": false, "width": "22%" },
+                            { "title": "Iskustvo", "data": "Technologies", "searchable": true, "sortable": false, "width": "21%" },
+                            { "title": "Senioritet", "data": "Seniority", "searchable": false, "sortable": true, "width": "14%" },
+                            {
+                                "title": "Komande", "searchable": false, "sortable": false, "width": "22%",
+                                render: (data, type, row) => {
+                                    let btnGroupHtml = "<div class='buttonGroupCenter'>\
+                                                        <div class='btn-group btn-group-xs'>\
+                                                        <a class='btn btn-primary' href='../../Contacts/ContactDetails/" + row.Id + "'>\
+                                                        <span class='glyphicon glyphicon-eye-open'></span>\
+                                                        </a>"; //<span>Info</span>
+
+                                    if (userRole <= 1)
+                                        btnGroupHtml += "<button class='btn btn-success' onclick='addCandidateToContacts(this)' value='" + row.Id + "' @ViewBag.processEdit>\
+                                                         <span class='glyphicon glyphicon-plus'></span>\
+                                                         </button>"; //<span>Dodaj</span>
+
+                                    btnGroupHtml += "</div></div>";
+
+                                    return btnGroupHtml;
+                                }
+                            }
+                        ]
+                    });
+                }
+            };
+
+            assetListCandidates.init();
+
+        });
+
+        var assetListContacted;
+
+        $(() => {
+            assetListContacted = {
+                dt: null,
+                init: () => {
+                    dt = $('#contacted-for-process-table').DataTable({
+                        "serverSide": true,
+                        "processing": true,
+                        "autoWidth": false,
+                        "pageLength": 10,
+                        "dom": 'ftp',
+                        "language": {
+                            "paginate": {
+                                "next": "<span>→</span>", //Sledeća
+                                "previous": "<span>←</span>" //Prethodna
+                            },
+                            "search": "<span>Pretraži kandidate (po imenu, e-mail adresi ili iskustvu): <span>",
+                            "emptyTable": "Nema podataka za prikaz."
+                        },
+                        "ajax": {
+                            "url": "@Url.Action("GetContactsForProcess", "Data")",
+                            "type": "POST",
+                            "data": (d) => {
+                                let pId = $('input[name=detailProcessId]');
+                                d.processId = parseInt(pId.val());
+                            }
+                        },
+                        "columns": [
+                            { "title": "Ime i prezime", "data": "FirstName", "searchable": true, "sortable": true, "width": "22%" },
+                            { "title": "E-mail adresa", "data": "Email", "searchable": true, "sortable": false, "width": "23%" },
+                            { "title": "Iskustvo", "data": "Technologies", "searchable": true, "sortable": false, "width": "24%" },
+                            { "title": "Senioritet", "data": "Seniority", "searchable": false, "sortable": true, "width": "14%" },
+                            {
+                                "title": "Kontaktiraj", "searchable": false, "sortable": false, "width": "17%",
+                                render: (data, type, row) => {
+                                    let btnContactHtml = "<div class='buttonGroupCenter'>\
+                                                          <button class='btn btn-success btn-xs' value='" + row.Id + "' onclick='contactCandidate(this)' @ViewBag.processEdit";
+
+                                    if (userRole > 1)
+                                        btnContactHtml += " disabled='disabled'";
+
+                                    btnContactHtml += "><span class='glyphicon glyphicon-phone-alt'></span>\
+                                                        <span>Kontaktiraj</span></button></div>";
+
+                                    return btnContactHtml;
+                                }
+                            }
+                        ]
+                    });
+                }
+            };
+
+            assetListContacted.init();
+
+        });
+
+    </script>
+
+}

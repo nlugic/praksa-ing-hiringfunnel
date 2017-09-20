@@ -1,0 +1,439 @@
+﻿
+@{ ViewBag.Title = "HiringFunnel - Metrika procesa"; }
+@using HiringFunnel.Data
+@using HiringFunnel.Data.Models
+@using HiringFunnel.Data.DAL
+
+@*@Styles.Render("~/Content/selectric")*@
+
+<h3>Metrika procesa</h3>
+<hr />
+
+<div class="row">
+    <div class="col-md-6 metricsDataContainer">
+        <h4>Trajanje procesa</h4>
+        <div class="form-group metricsControlsContainer">
+            <select class="form-control" name="Seniority">
+                <option value="">Odaberi senioritet</option>
+                @{ Array seniorities = Enum.GetValues(typeof(SeniorityLevel)); }
+                @foreach (SeniorityLevel sen in seniorities)
+                {
+                    <option value="@((int)sen)">@sen</option>
+                }
+            </select>
+            <select class="form-control" name="Technology">
+                <option value="">Odaberi tehnologiju</option>
+                @{
+                    ICollection<Technology> technologies = null;
+                    using (HFContext hfdb = new HFContext())
+                    {
+                        technologies = hfdb.Technologies.ToList();
+                    }
+
+                    foreach (Technology aTech in technologies)
+                    {
+                        <option value="@aTech.Name">@aTech.Name</option>
+                    }
+                }
+            </select>
+            <button class="btn btn-sm btn-primary" onclick="getMetricsData()">
+                <span class="glyphicon glyphicon-stats"></span>
+                <span>Izračunaj</span>
+            </button>
+        </div>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Prosečno trajanje procesa za tehnologiju i senioritet: </label>
+            <label id="avgProcessTime" class="control-label metricsResult"></label>
+        </div>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Najduži proces za tehnologiju i senioritet: </label>
+            <div class="metricsResult">
+                <label id="maxProcessTime" class="control-label"></label>
+                <a id="maxProcessTimeLink" class="btn btn-sm btn-primary">
+                    <span class="glyphicon glyphicon-eye-open"></span>
+                    <span>Pogledaj</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Najkraći proces za tehnologiju i senioritet: </label>
+            <div class="metricsResult">
+                <label id="minProcessTime" class="control-label"></label>
+                <a id="minProcessTimeLink" class="btn btn-sm btn-primary">
+                    <span class="glyphicon glyphicon-eye-open"></span>
+                    <span>Pogledaj</span>
+                </a>
+            </div>
+        </div>
+
+        <hr />
+
+        <h4>Trajanje statusa</h4>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Prosečno trajanje statusa za tehnologiju i senioritet: </label>
+            <label id="avgStatusTime" class="control-label metricsResult"></label>
+        </div>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Najduži status za tehnologiju i senioritet: </label>
+            <div class="metricsResult">
+                <label id="maxStatusTime" class="control-label"></label>
+                <a id="maxStatusTimeLink" class="btn btn-sm btn-primary">
+                    <span class="glyphicon glyphicon-eye-open"></span>
+                    <span>Pogledaj</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Najkraći status za tehnologiju i senioritet: </label>
+            <div class="metricsResult">
+                <label id="minStatusTime" class="control-label"></label>
+                <a id="minStatusTimeLink" class="btn btn-sm btn-primary">
+                    <span class="glyphicon glyphicon-eye-open"></span>
+                    <span>Pogledaj</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 metricsGlobalContainer">
+        <h4>Globalna metrika</h4>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Prosečno trajanje svih procesa: </label>
+            <label id="avgProcessTimeGlobal" class="control-label metricsResult"></label>
+        </div>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Najduži od svih procesa: </label>
+            <div class="metricsResult">
+                <label id="maxProcessTimeGlobal" class="control-label"></label>
+                <a id="maxProcessTimeGlobalLink" class="btn btn-sm btn-primary">
+                    <span class="glyphicon glyphicon-eye-open"></span>
+                    <span>Pogledaj</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Najkraći od svih procesa: </label>
+            <div class="metricsResult">
+                <label id="minProcessTimeGlobal" class="control-label"></label>
+                <a id="minProcessTimeGlobalLink" class="btn btn-sm btn-primary">
+                    <span class="glyphicon glyphicon-eye-open"></span>
+                    <span>Pogledaj</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Prosečno trajanje svih statusa: </label>
+            <label id="avgStatusTimeGlobal" class="control-label metricsResult"></label>
+        </div>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Najduži od svih statusa: </label>
+            <div class="metricsResult">
+                <label id="maxStatusTimeGlobal" class="control-label"></label>
+                <a id="maxStatusTimeGlobalLink" class="btn btn-sm btn-primary">
+                    <span class="glyphicon glyphicon-eye-open"></span>
+                    <span>Pogledaj</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="metricsResultContainer">
+            <label class="control-label">Najkraći od svih statusa: </label>
+            <div class="metricsResult">
+                <label id="minStatusTimeGlobal" class="control-label"></label>
+                <a id="minStatusTimeGlobalLink" class="btn btn-sm btn-primary">
+                    <span class="glyphicon glyphicon-eye-open"></span>
+                    <span>Pogledaj</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="metricsControlsContainer">
+            <select class="form-control" name="Status">
+                <option value="">Odaberi status</option>
+                @{ Array statuses = Enum.GetValues(typeof(Phase)); }
+                @for (Phase ph = Phase.Contact_Phase; ph < Phase.Acceptance_Phase; ++ph)
+                {
+                    <option value="@((int)ph)">@ph</option>
+                }
+            </select>
+            <button class="btn btn-sm btn-primary" onclick="getAvgStatusTime()">
+                <span class="glyphicon glyphicon-stats"></span>
+                <span>Izračunaj</span>
+            </button>
+        </div>
+
+        <div class="metricsResultContainer">
+            <label class="control-label">Prosečno trajanje odabranog statusa: </label>
+            <label id="avgTimeForStatus" class="control-label metricsResult"></label>
+        </div>
+    </div>
+</div>
+<div>
+    <div class="form-group metricsControlsContainer">
+        <select class="form-control" name="MSeniority">
+            <option value="">Odaberi senioritet</option>
+            @foreach (SeniorityLevel sen in seniorities)
+            {
+                <option value="@((int)sen)">@sen</option>
+            }
+        </select>
+        <select class="form-control" name="MTechnology">
+            <option value="">Odaberi tehnologiju</option>
+            @foreach (Technology aTech in technologies)
+            {
+                <option value="@aTech.Name">@aTech.Name</option>
+            }
+        </select>
+        @{ int currMonth = DateTime.Now.Month; }
+        <select class="form-control" name="Month">
+            <option value="1" selected="@(currMonth == 1 ? true : false)">Januar</option>
+            <option value="2" selected="@(currMonth == 2 ? true : false)">Februar</option>
+            <option value="3" selected="@(currMonth == 3 ? true : false)">Mart</option>
+            <option value="4" selected="@(currMonth == 4 ? true : false)">April</option>
+            <option value="5" selected="@(currMonth == 5 ? true : false)">Maj</option>
+            <option value="6" selected="@(currMonth == 6 ? true : false)">Jun</option>
+            <option value="7" selected="@(currMonth == 7 ? true : false)">Jul</option>
+            <option value="8" selected="@(currMonth == 8 ? true : false)">Avgust</option>
+            <option value="9" selected="@(currMonth == 9 ? true : false)">Septembar</option>
+            <option value="10" selected="@(currMonth == 10 ? true : false)">Oktobar</option>
+            <option value="11" selected="@(currMonth == 11 ? true : false)">Novembar</option>
+            <option value="12" selected="@(currMonth == 12 ? true : false)">Decembar</option>
+        </select>
+        <select class="form-control" name="Year">
+            @{
+                ICollection<Process> processes = null;
+                using (HFContext hfdb = new HFContext())
+                {
+                    processes = hfdb.Processes.ToList();
+                }
+
+                HashSet<int> years = new HashSet<int>();
+                foreach (Process proc in processes)
+                {
+                    int year = (proc.EndDate.HasValue) ? proc.EndDate.Value.Year : proc.StartDate.Year;
+                    years.Add(year);
+                }
+
+                foreach (int year in years)
+                {
+                    <option value="@year">@year</option>
+                }
+            }
+        </select>
+        <button class="btn btn-sm btn-primary" onclick="getProcessMonthlyMetrics()">
+            <span class="glyphicon glyphicon-stats"></span>
+            <span>Izračunaj</span>
+        </button>
+    </div>
+
+    <hr />
+
+    <table id="process-metrics-table" class="table table-hover table-striped table-condensed">
+        <!-- ovde crta datatable -->
+    </table>
+
+    <div class="metricsResultContainer">
+        <label class="control-label">Broj zaposlenih u ovom periodu: </label>
+        <label id="acceptsNumber" class="control-label metricsResult"></label>
+    </div>
+
+    <div class="metricsResultContainer">
+        <label class="control-label">Broj procesa u ovom periodu: </label>
+        <label id="processesNumber" class="control-label metricsResult"></label>
+    </div>
+</div>
+
+@section Scripts
+{
+
+    @*@Scripts.Render("~/bundles/selectric");*@
+
+    <script type="text/javascript">
+
+        $(document).ready(() => {
+            getGlobalMetricsData(true);
+            getProcessMonthlyMetrics();
+
+            //$('select').selectric({
+            //    inheritOriginalWidth: true,
+            //});
+        });
+
+        function drawMetrics(response) {
+            $('#avgProcessTime').html(response.avgProcessTime + " dana");
+            $('#maxProcessTime').html(response.maxProcessTime + " dana - " + response.maxProcessName);
+            $('#maxProcessTimeLink').attr('href', '../../Processes/ProcessDetails/' + response.maxProcessId);
+            $('#minProcessTime').html(response.minProcessTime + " dana - " + response.minProcessName);
+            $('#minProcessTimeLink').attr('href', '../../Processes/ProcessDetails/' + response.minProcessId);
+            $('#avgStatusTime').html(response.avgStatusTime + " dana");
+            $('#maxStatusTime').html(response.maxStatusTime + " dana");
+            $('#maxStatusTimeLink').attr('href', '../../ProcessInstances/ProcessInstanceDetails/' + response.maxStatusId);
+            $('#minStatusTime').html(response.minStatusTime + " dana");
+            $('#minStatusTimeLink').attr('href', '../../ProcessInstances/ProcessInstanceDetails/' + response.minStatusId);
+        }
+
+        function drawGlobalMetrics(response) {
+            $('#avgProcessTimeGlobal').html(response.avgProcessTime + " dana");
+            $('#maxProcessTimeGlobal').html(response.maxProcessTime + " dana - " + response.maxProcessName);
+            $('#maxProcessTimeGlobalLink').attr('href', '../../Processes/ProcessDetails/' + response.maxProcessId);
+            $('#minProcessTimeGlobal').html(response.minProcessTime + " dana - " + response.minProcessName);
+            $('#minProcessTimeGlobalLink').attr('href', '../../Processes/ProcessDetails/' + response.minProcessId);
+            $('#avgStatusTimeGlobal').html(response.avgStatusTime + " dana");
+            $('#maxStatusTimeGlobal').html(response.maxStatusTime + " dana");
+            $('#maxStatusTimeGlobalLink').attr('href', '../../ProcessInstances/ProcessInstanceDetails/' + response.maxStatusId);
+            $('#minStatusTimeGlobal').html(response.minStatusTime + " dana");
+            $('#minStatusTimeGlobalLink').attr('href', '../../ProcessInstances/ProcessInstanceDetails/' + response.minStatusId);
+        }
+
+        function getGlobalMetricsData(initialLoad) {
+            $.ajax({
+                url: '@Url.Action("GetGlobalMetricsData", "Metrics")',
+                type: 'POST',
+                success: (response) => {
+                    if (initialLoad)
+                        drawMetrics(response);
+                    drawGlobalMetrics(response);
+                }
+            });
+        }
+
+        function getMetricsData() {
+            let seniority = $('select[name=Seniority] > option:selected').val();
+            let technology = $('select[name=Technology] > option:selected').val();
+
+            $.ajax({
+                url: '@Url.Action("GetMetricsData", "Metrics")',
+                type: 'POST',
+                data: {
+                    'seniority': seniority,
+                    'technology': technology
+                },
+                success: (response) => {
+                    drawMetrics(response);
+                }
+            });
+        }
+
+        function getAvgStatusTime() {
+            let status = $('select[name=Status] > option:selected').val();
+
+            $.ajax({
+                url: '@Url.Action("GetAverageStatusTime", "Metrics")',
+                type: 'POST',
+                data: {
+                    'status': status
+                },
+                success: (response) => {
+                    $('#avgTimeForStatus').html(response.avgStatTime);
+                }
+            });
+        }
+
+        function getProcessMonthlyMetrics() {
+            let seniority = $('select[name=MSeniority] > option:selected').val();
+            let technology = $('select[name=MTechnology] > option:selected').val();
+            let month = $('select[name=Month] > option:selected').val();
+            let year = $('select[name=Year] > option:selected').val();
+
+            $.ajax({
+                url: '@Url.Action("GetProcessMonthlyMetrics", "Metrics")',
+                type: 'POST',
+                data: {
+                    'seniority': seniority,
+                    'technology': technology,
+                    'month': month,
+                    'year': year
+                },
+                success: (response) => {
+                    $('#acceptsNumber').html(response.acceptsNumber);
+                    $('#processesNumber').html(response.processesNumber);
+                    $('#process-metrics-table').DataTable().ajax.reload();
+                }
+            });
+        }
+
+        var assetListProcessMetrics;
+
+        $(() => {
+            assetListProcessMetrics = {
+                dt: null,
+                init: () => {
+                    dt = $('#process-metrics-table').DataTable({
+                        "serverSide": true,
+                        "processing": true,
+                        "autoWidth": false,
+                        "pageLength": 5,
+                        "dom": 'pft',
+                        "language": {
+                            "paginate": {
+                                "next": "<span>→</span>", //Sledeća
+                                "previous": "<span>←</span>" //Prethodna
+                            },
+                            "search": "<span>Pretraži procese (po nazivu ili tehnologijama): <span>",
+                            "emptyTable": "Nema podataka za prikaz."
+                        },
+                        "ajax": {
+                            "url": "@Url.Action("GetProcessMetricsData", "Data")",
+                            "type": "POST",
+                            "data": (d) => {
+                                let seniority = $('select[name=MSeniority] > option:selected').val();
+                                let technology = $('select[name=MTechnology] > option:selected').val();
+                                let month = $('select[name=Month] > option:selected').val();
+                                let year = $('select[name=Year] > option:selected').val();
+                                d.seniority = seniority;
+                                d.technology = technology;
+                                d.month = month;
+                                d.year = year;
+                            }
+                        },
+                        "columns": [
+                            { "title": "Naziv procesa", "data": "Name", "searchable": true, "sortable": true, "width": "28%" },
+                            { "title": "Tehnologije", "data": "Technologies", "searchable": true, "sortable": false, "width": "25%" },
+                            { "title": "Senioritet", "data": "Seniority", "searchable": false, "sortable": true, "width": "11%" },
+                            {
+                                "title": "Trajanje procesa", "data": "Duration", "searchable": false, "sortable": true, "width": "9%",
+                                render: (data, type, row) => {
+                                    return row.Duration + " dana";
+                                }
+                            },
+                            {
+                                "searchable": false, "sortable": false, "width": "20%",
+                                render: (data, type, row) => {
+                                    let btnGroupHtml = "<div class='buttonGroupCenter'>\
+                                                        <div class='btn-group btn-group-sm'>\
+                                                        <a class='btn btn-primary' href='ProcessDetails/" + row.Id + "'>\
+                                                        <span class='glyphicon glyphicon-info-sign'></span>\
+                                                        <span>Info</span>";
+
+                                    if (row.EndDate === "Nema")
+                                        btnGroupHtml += "<span> &amp;</span>\
+                                                         <span>Izmeni</span>\
+                                                         <span class='glyphicon glyphicon-edit'></span>";
+
+                                    btnGroupHtml += "</a></div></div>";
+
+                                    return btnGroupHtml;
+                                }
+                            }
+                        ]
+                    });
+                }
+            };
+
+            assetListProcessMetrics.init();
+
+        });
+
+    </script>
+    
+}

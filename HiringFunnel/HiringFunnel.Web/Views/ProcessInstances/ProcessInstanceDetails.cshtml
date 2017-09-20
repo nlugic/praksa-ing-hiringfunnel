@@ -1,0 +1,989 @@
+﻿@using HiringFunnel.Web.ViewModels
+@model ProcessInstanceEditInfo
+
+@{ ViewBag.Title = "HiringFunnel - Podaci o učešću kandidata"; }
+@using HiringFunnel.Data
+@using HiringFunnel.Data.Models
+@using HiringFunnel.Data.DAL
+
+@Styles.Render("~/Content/flatpickr")
+@Styles.Render("~/Content/selectric")
+
+@{ User login = Session["login"] as User; }
+
+<h3>Podaci o učešću kandidata</h3>
+<hr />
+
+@{ ICollection<User> allUsers = null; }
+@using (HFContext hfdb = new HFContext())
+{
+    allUsers = hfdb.Users.ToList();
+}
+
+@using (Html.BeginForm(actionName: "EditProcessInstance", controllerName: "ProcessInstances"))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="pInstanceEditContainer">
+
+        <input type="hidden" name="editProcessInstanceId" value="@Model.Id" />
+        <input type="hidden" name="currentUserId" value="@login.Id" />
+
+        <div id="phaseContacted" class="pInstancePhaseEditContainer">
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="form-group">
+                        <label for="@((int)Phase.Contact_Phase + "comment")">Komentar:</label>
+                        <textarea id="@((int)Phase.Contact_Phase + "comment")" class="form-control" name="contactComment" @ViewBag.disableEdit></textarea>
+                    </div>
+
+                    <div class="checkbox hideCommentCheckbox">
+                        <label>
+                            <input id="@((int)Phase.Contact_Phase + "hidden")" class="form-control" type="checkbox" name="hideContactComment" value="true" @ViewBag.disableEdit />
+                            Sakrij komentar
+                        </label>
+                    </div>
+
+                    <div class="commentButtonContainer">
+                        <button id="@((int)Phase.Contact_Phase + "comments")" class="btn btn-sm btn-info" type="button" onclick="showCommentsForPhase(this)">
+                            <span class="glyphicon glyphicon-comment"></span>
+                            <span>Pogledaj komentare</span>
+                        </button>
+
+                        <button id="@((int)Phase.Contact_Phase + "post")" class="btn btn-sm btn-primary @ViewBag.disableEdit" type="button" onclick="postComment(this)" disabled="@ViewBag.disableEdit">
+                            <span class="glyphicon glyphicon-arrow-right"></span>
+                            <span>Sačuvaj komentar</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="InterviewScheduled" value="true" @((Model.InterviewScheduled) ? "checked" : "") @ViewBag.disableEdit />
+                            Intervju zakazan
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="phaseInterview" class="pInstancePhaseEditContainer">
+            <div class="interviewControlsContainer">
+                <label>
+                    Intervjuer:
+                    <select class="form-control" name="InterviewersIntw" multiple @ViewBag.disableEdit>
+                        <option value="">Izaberi intervjuera</option>
+                        @foreach (User usr in allUsers)
+                        {
+                            <option value="@usr.Id" @((Model.Interviewers.SingleOrDefault(intw => intw.InterviewerId == usr.Id && intw.Type == Phase.Interview_Phase) != null) ? "selected" : "")>
+                                @usr.FirstName @usr.LastName
+                            </option>
+                        }
+                    </select>
+                </label>
+
+                <label>
+                    Datum intervjua:
+                    <input id="InterviewDate" class="form-control" type="datetime" name="InterviewDate" value="@Model.InterviewDate" @ViewBag.disableEdit />
+                </label>
+            </div>
+
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="form-group">
+                        <label for="@((int)Phase.Interview_Phase + "comment")">Feedback nakon intervjua:</label>
+                        <textarea id="@((int)Phase.Interview_Phase + "comment")" class="form-control" name="interviewComment" @ViewBag.disableIntwEdit></textarea>
+                    </div>
+
+                    <div class="commentButtonContainer">
+                        <button id="@((int)Phase.Interview_Phase + "comments")" class="btn btn-sm btn-info" type="button" onclick="showCommentsForPhase(this)">
+                            <span class="glyphicon glyphicon-comment"></span>
+                            <span>Pogledaj komentare</span>
+                        </button>
+
+                        <button id="@((int)Phase.Interview_Phase + "post")" class="btn btn-sm btn-primary @ViewBag.disableIntwEdit" type="button" onclick="postComment(this)" disabled="@ViewBag.disableIntwEdit">
+                            <span class="glyphicon glyphicon-arrow-right"></span>
+                            <span>Sačuvaj komentar</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="InterviewNoticed" value="true" @((Model.InterviewNoticed) ? "checked" : "") @ViewBag.disableEdit />
+                            Kandidat obavešten
+                        </label>
+                    </div>
+
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="InterviewHeld" value="true" @((Model.InterviewHeld) ? "checked" : "") @ViewBag.disableEdit />
+                            Intervju održan
+                        </label>
+                    </div>
+
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="TestScheduled" value="true" @((Model.TestScheduled) ? "checked" : "") @ViewBag.disableEdit />
+                            Test zakazan
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="phaseTest" class="pInstancePhaseEditContainer">
+            <div class="interviewControlsContainer">
+                <label>
+                    Intervjuer:
+                    <select class="form-control" name="InterviewersTest" multiple @ViewBag.disableEdit>
+                        <option value="">Izaberi intervjuera</option>
+                        @foreach (User usr in allUsers)
+                        {
+                            <option value="@usr.Id" @((Model.Interviewers.SingleOrDefault(intw => intw.InterviewerId == usr.Id && intw.Type == Phase.Test_Phase) != null) ? "selected" : "")>
+                                @usr.FirstName @usr.LastName
+                            </option>
+                        }
+                    </select>
+                </label>
+
+                <label>
+                    Datum testa:
+                    <input id="TestDate" class="form-control" type="datetime" name="TestDate" value="@Model.TestDate" @ViewBag.disableEdit />
+                </label>
+            </div>
+
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="form-group">
+                        <label for="@((int)Phase.Test_Phase + "comment")">Feedback nakon testa:</label>
+                        <textarea id="@((int)Phase.Test_Phase + "comment")" class="form-control" name="testComment" @ViewBag.disableIntwEdit></textarea>
+                    </div>
+
+                    <div class="commentButtonContainer">
+                        <button id="@((int)Phase.Test_Phase + "comments")" class="btn btn-sm btn-info" type="button" onclick="showCommentsForPhase(this)">
+                            <span class="glyphicon glyphicon-comment"></span>
+                            <span>Pogledaj komentare</span>
+                        </button>
+
+                        <button id="@((int)Phase.Test_Phase + "post")" class="btn btn-sm btn-primary @ViewBag.disableIntwEdit" type="button" onclick="postComment(this)" disabled="@ViewBag.disableIntwEdit">
+                            <span class="glyphicon glyphicon-arrow-right"></span>
+                            <span>Sačuvaj komentar</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="TestNoticed" value="true" @((Model.TestNoticed) ? "checked" : "") @ViewBag.disableEdit />
+                            Kandidat obavešten
+                        </label>
+                    </div>
+
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="TestHeld" value="true" @((Model.TestHeld) ? "checked" : "") @ViewBag.disableEdit />
+                            Test održan
+                        </label>
+                    </div>
+
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="TestDefenseScheduled" value="true" @((Model.TestDefenseScheduled) ? "checked" : "") @ViewBag.disableEdit />
+                            Odbrana testa zakazana
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="phaseTestDefense" class="pInstancePhaseEditContainer">
+            <div class="interviewControlsContainer">
+                <label>
+                    Intervjuer:
+                    <select class="form-control" name="InterviewersTestDef" multiple @ViewBag.disableEdit>
+                        <option value="">Izaberi intervjuera</option>
+                        @foreach (User usr in allUsers)
+                        {
+                            <option value="@usr.Id" @((Model.Interviewers.SingleOrDefault(intw => intw.InterviewerId == usr.Id && intw.Type == Phase.TestDefense_Phase) != null) ? "selected" : "")>
+                                @usr.FirstName @usr.LastName
+                            </option>
+                        }
+                    </select>
+                </label>
+
+                <label>
+                    Datum odbrane:
+                    <input id="TestDefenseDate" class="form-control" type="datetime" name="TestDefenseDate" value="@Model.TestDefenseDate" @ViewBag.disableEdit />
+                </label>
+            </div>
+
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="form-group">
+                        <label for="@((int)Phase.TestDefense_Phase + "comment")">Feedback nakon odbrane:</label>
+                        <textarea id="@((int)Phase.TestDefense_Phase + "comment")" class="form-control" name="testDefenseComment" @ViewBag.disableIntwEdit></textarea>
+                    </div>
+
+                    <div class="commentButtonContainer">
+                        <button id="@((int)Phase.TestDefense_Phase + "comments")" class="btn btn-sm btn-info" type="button" onclick="showCommentsForPhase(this)">
+                            <span class="glyphicon glyphicon-comment"></span>
+                            <span>Pogledaj komentare</span>
+                        </button>
+
+                        <button id="@((int)Phase.TestDefense_Phase + "post")" class="btn btn-sm btn-primary @ViewBag.disableIntwEdit" type="button" onclick="postComment(this)" disabled="@ViewBag.disableIntwEdit">
+                            <span class="glyphicon glyphicon-arrow-right"></span>
+                            <span>Sačuvaj komentar</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="TestDefenseNoticed" value="true" @((Model.TestDefenseNoticed) ? "checked" : "") @ViewBag.disableEdit />
+                            Kandidat obavešten
+                        </label>
+                    </div>
+
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="TestDefenseHeld" value="true" @((Model.TestDefenseHeld) ? "checked" : "") @ViewBag.disableEdit />
+                            Odbrana održana
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="phaseOffer" class="pInstancePhaseEditContainer">
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="form-group">
+                        <label for="@((int)Phase.Offer_Phase + "comment")">Komentar uz ponudu:</label>
+                        <textarea id="@((int)Phase.Offer_Phase + "comment")" class="form-control" name="offerComment" @ViewBag.disableEdit></textarea>
+                    </div>
+
+                    <div class="checkbox hideCommentCheckbox">
+                        <label>
+                            <input id="@((int)Phase.Offer_Phase + "hidden")" class="form-control" type="checkbox" name="hideOfferComment" value="true" @ViewBag.disableEdit />
+                            Sakrij komentar
+                        </label>
+                    </div>
+
+                    <div class="commentButtonContainer">
+                        <button id="@((int)Phase.Offer_Phase + "comments")" class="btn btn-sm btn-info" type="button" onclick="showCommentsForPhase(this)">
+                            <span class="glyphicon glyphicon-comment"></span>
+                            <span>Pogledaj komentare</span>
+                        </button>
+
+                        <button id="@((int)Phase.Offer_Phase + "post")" class="btn btn-sm btn-primary @ViewBag.disableEdit" type="button" onclick="postComment(this)" disabled="@ViewBag.disableEdit">
+                            <span class="glyphicon glyphicon-arrow-right"></span>
+                            <span>Sačuvaj komentar</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="OfferSent" value="true" @((Model.OfferSent) ? "checked" : "") @ViewBag.disableEdit />
+                            Poslata ponuda
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            
+
+            
+        </div>
+
+        <div id="phaseAccepted" class="pInstancePhaseEditContainer">
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="form-group">
+                        <label for="@((int)Phase.Acceptance_Phase + "comment")">Komentar uz prijem:</label>
+                        <textarea id="@((int)Phase.Acceptance_Phase + "comment")" class="form-control" name="acceptComment" @ViewBag.disableEdit></textarea>
+                    </div>
+
+                    <div class="checkbox hideCommentCheckbox">
+                        <label>
+                            <input id="@((int)Phase.Acceptance_Phase + "hidden")" class="form-control" type="checkbox" name="hideAcceptComment" value="true" @ViewBag.disableEdit />
+                            Sakrij komentar
+                        </label>
+                    </div>
+
+                    <div class="commentButtonContainer">
+                        <button id="@((int)Phase.Acceptance_Phase + "comments")" class="btn btn-sm btn-info" type="button" onclick="showCommentsForPhase(this)">
+                            <span class="glyphicon glyphicon-comment"></span>
+                            <span>Pogledaj komentare</span>
+                        </button>
+
+                        <button id="@((int)Phase.Acceptance_Phase + "post")" class="btn btn-sm btn-primary @ViewBag.disableEdit" type="button" onclick="postComment(this)" disabled="@ViewBag.disableEdit">
+                            <span class="glyphicon glyphicon-arrow-right"></span>
+                            <span>Sačuvaj komentar</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="Accepted" value="true" onchange="terminalPhaseExclusion(this, '@(Phase.Acceptance_Phase)')" @((Model.Accepted) ? "checked" : "") @ViewBag.disableEdit />
+                            Kandidat primljen
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="phaseRejected" class="pInstancePhaseEditContainer">
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="form-group">
+                        <label for="@((int)Phase.Rejection_Phase + "comment")">Komentar uz odbijanje:</label>
+                        <textarea id="@((int)Phase.Rejection_Phase + "comment")" class="form-control" name="rejectComment" @ViewBag.disableEdit></textarea>
+                    </div>
+
+                    <div class="checkbox hideCommentCheckbox">
+                        <label>
+                            <input id="@((int)Phase.Rejection_Phase + "hidden")" class="form-control" type="checkbox" name="hideRejectComment" value="true" @ViewBag.disableEdit />
+                            Sakrij komentar
+                        </label>
+                    </div>
+
+                    <div class="commentButtonContainer">
+                        <button id="@((int)Phase.Rejection_Phase + "comments")" class="btn btn-sm btn-info" type="button" onclick="showCommentsForPhase(this)">
+                            <span class="glyphicon glyphicon-comment"></span>
+                            <span>Pogledaj komentare</span>
+                        </button>
+
+                        <button id="@((int)Phase.Rejection_Phase + "post")" class="btn btn-sm btn-primary @ViewBag.disableEdit" type="button" onclick="postComment(this)" disabled="@ViewBag.disableEdit">
+                            <span class="glyphicon glyphicon-arrow-right"></span>
+                            <span>Sačuvaj komentar</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="Rejected" value="true" onchange="terminalPhaseExclusion(this, '@(Phase.Rejection_Phase)')" @((Model.Rejected) ? "checked" : "") @ViewBag.disableEdit />
+                            Kandidat odbijen
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="phaseQuit" class="pInstancePhaseEditContainer">
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="form-group">
+                        <label for="@((int)Phase.Quit_Phase + "comment")">Komentar uz odustanak:</label>
+                        <textarea id="@((int)Phase.Quit_Phase + "comment")" class="form-control" name="quitComment" @ViewBag.disableEdit></textarea>
+                    </div>
+
+                    <div class="checkbox hideCommentCheckbox">
+                        <label>
+                            <input id="@((int)Phase.Quit_Phase + "hidden")" class="form-control" type="checkbox" name="hideQuitComment" value="true" @ViewBag.disableEdit />
+                            Sakrij komentar
+                        </label>
+                    </div>
+
+                    <div class="commentButtonContainer">
+                        <button id="@((int)Phase.Quit_Phase + "comments")" class="btn btn-sm btn-info" type="button" onclick="showCommentsForPhase(this)">
+                            <span class="glyphicon glyphicon-comment"></span>
+                            <span>Pogledaj komentare</span>
+                        </button>
+
+                        <button id="@((int)Phase.Quit_Phase + "post")" class="btn btn-sm btn-primary @ViewBag.disableEdit" type="button" onclick="postComment(this)" disabled="@ViewBag.disableEdit">
+                            <span class="glyphicon glyphicon-arrow-right"></span>
+                            <span>Sačuvaj komentar</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="checkbox processInstancePropertyCheckbox">
+                        <label>
+                            <input class="form-control" type="checkbox" name="Quit" value="true" onchange="terminalPhaseExclusion(this, '@(Phase.Quit_Phase)')" @((Model.Quit) ? "checked" : "") @ViewBag.disableEdit />
+                            Kandidat odustao
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-success @ViewBag.disableEdit" type="button" onclick="editModal()" disabled="@ViewBag.disableEdit">
+            <span class="glyphicon glyphicon-arrow-right"></span>
+            <span>Sačuvaj izmene</span>
+        </button>
+    </div>
+            
+    <!-- MODALNA FORMA ZA POTVRDU IZMENA -->
+    <div id="modalEdit" class="modal fade">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button class="close" type="button" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Izmena podataka o učešću</h4>
+                </div>
+                <div class="modal-body">
+                    <p>Da li ste sigurni da želite da sačuvate ove izmene?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default" type="button" data-dismiss="modal">Ne</button>
+                    <button class="btn btn-success" type="submit">
+                        <span class="glyphicon glyphicon-floppy-save"></span>
+                        <span>Sačuvaj</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="sideContainer">
+    <div class="processInfoContainer">
+        <dl class="dl-horizontal">
+            <dt>@Html.DisplayNameFor(model => model.InstanceOf.Name):</dt>
+            <dd>@Html.DisplayFor(model => model.InstanceOf.Name)</dd>
+            <dt>@Html.DisplayNameFor(model => model.InstanceOf.Technologies):</dt>
+            <dd>@Html.DisplayFor(model => model.InstanceOf.Technologies)</dd>
+            <dt>@Html.DisplayNameFor(model => model.InstanceOf.Seniority):</dt>
+            <dd>@Html.DisplayFor(model => model.InstanceOf.Seniority)</dd>
+            <dt>@Html.DisplayNameFor(model => model.CreationDate):</dt>
+            <dd>@Html.DisplayFor(model => model.CreationDate)</dd>
+        </dl>
+        <div class="buttonGroupCenter">
+            <a class="btn btn-primary" href="@Url.Action("ProcessDetails", "Processes", new { Id = Model.InstanceOf.Id })">
+                <span class="glyphicon glyphicon-eye-open"></span>
+                <span>Pogledaj proces</span>
+            </a>
+        </div>
+    </div>
+
+    <hr />
+
+    <div class="contactInfoContainer">
+        <dl class="dl-horizontal">
+            <dt>@Html.DisplayNameFor(model => model.ContactInProcess.FirstName) kandidata:</dt>
+            <dd>@(Html.DisplayFor(model => model.ContactInProcess.FirstName) + " " 
+                    + @Html.DisplayFor(model => model.ContactInProcess.LastName))</dd>
+            <dt>@Html.DisplayNameFor(model => model.ContactInProcess.Location):</dt>
+            <dd>@Html.DisplayFor(model => model.ContactInProcess.Location)</dd>
+            <dt>@Html.DisplayNameFor(model => model.ContactInProcess.CurrentWorkplace):</dt>
+            <dd>@Html.DisplayFor(model => model.ContactInProcess.CurrentWorkplace)</dd>
+        </dl>
+        <div class="buttonGroupCenter contactInfoButtonsContainer">
+            <div class="btn-group btn-group-sm">
+                @if (Model.ContactInProcess.CVContent != null)
+                {
+                    <a class="btn btn-primary" href="@Url.Action("OpenContactCV", "Contacts", new { Id = Model.ContactInProcess.Id })" target="_blank">
+                        <span class="glyphicon glyphicon-paperclip"></span>
+                        <span>Pogledaj CV</span>
+                    </a>
+                }
+                <a class="btn btn-primary" href="@Url.Action("ContactDetails", "Contacts", new { Id = Model.ContactInProcess.Id })">
+                    <span class="glyphicon glyphicon-eye-open"></span>
+                    <span>Kontakt</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    <fieldset @ViewBag.disableEdit>
+        <div class="toDoItemsInputs">
+            <label for="toDoItemText">Novi podsetnik:</label>
+            <textarea id="toDoItemText" class="form-control" @ViewBag.disableEdit></textarea>
+            <button class="btn btn-sm btn-success" value="@Model.Id" onclick="postToDoItem(this)" @ViewBag.disableEdit>
+                <span class="glyphicon glyphicon-pushpin"></span>
+                <span>Dodaj</span>
+            </button>
+        </div>
+        <div class="toDoItemsContainer">
+            @if (Model.ToDoItems.Count > 0)
+            {
+                <label>Podsetnici:</label>
+            }
+            @foreach (ToDoItemInfo todo in Model.ToDoItems)
+            {
+                <div class="toDoItem">
+                    <p>@todo.Message</p>
+                    <div class="checkbox">
+                        <label>
+                            @if (todo.Completed)
+                            {
+                                <input id="@todo.Id" class="form-control" type="checkbox" disabled="disabled" checked />
+                            }
+                            else
+                            {
+                                <input id="@todo.Id" class="form-control" type="checkbox" onchange="markToDoItem(this)" @ViewBag.disableEdit />
+                            }
+                            Završeno
+                        </label>
+                    </div>
+                </div>
+            }
+        </div>
+    </fieldset>
+</div>
+
+<!-- MODALNA FORMA ZA PRIKAZ LISTE KOMENTARA -->
+<div id="modalPhaseComments" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="close" type="button" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Pogledaj komentare za fazu</h4>
+            </div>
+            <div class="modal-body">
+                <div class="modalTableContainer">
+                    <table id="phase-comment-table" class="table table-hover modalTable">
+                        <!-- ovde crta datatable -->
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" type="button" data-dismiss="modal">Nazad</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALNA FORMA ZA POTVRDU IZMENE KOMENTARA -->
+<div id="modalCommentEditConfirm" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="close" type="button" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Izmena komentara</h4>
+            </div>
+            <div class="modal-body">
+                <p>Da li ste sigurni da želite da sačuvate ove izmene?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" type="button" data-dismiss="modal">Ne</button>
+                <button class="btn btn-success" type="button" onclick="saveEditedComment(this)">
+                    <span class="glyphicon glyphicon-floppy-save"></span>
+                    <span>Sačuvaj</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALNA FORMA ZA POTVRDU BRISANJA KOMENTARA -->
+<div id="modalDeleteComment" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="close" type="button" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Obriši komentar</h4>
+            </div>
+            <div class="modal-body">
+                <p>Da li ste sigurni da želite da obrišete ovaj komentar?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" type="button" data-dismiss="modal">Ne</button>
+                <button class="btn btn-danger" type="button" onclick="deleteComment(this)">
+                    <span class="glyphicon glyphicon-remove"></span>
+                    <span>Obriši</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts
+{
+    
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/flatpickr")
+    @Scripts.Render("~/bundles/selectric")
+
+    <script type="text/javascript">
+
+        $(($) => {
+            $.validator.addMethod('date', (value, element) => {
+                let day = parseInt(value.substring(0, 2));
+                let dayValid = (day >= 1) && (day <= 31);
+                let month = parseInt(value.substring(3, 5));
+                let monthValid = (month >= 1) && (month <= 12);
+                let year = parseInt(value.substring(6, 10));
+                let yearValid = (year >= 1900) && (year <= 2100);
+                let hour = parseInt(value.substring(12, 14));
+                let hourValid = (hour >= 0) && (hour <= 23);
+                let minute = parseInt(value.substring(15));
+                let minuteValid = (minute >= 0) && (minute <= 59);
+                let chars = (value.charAt(2) == '.') && (value.charAt(5) == '.') && (value.charAt(10) == '.')
+                                && (value.charAt(11) == ' ') && (value.charAt(14) == ':');
+                return this.optional(element) || (dayValid && monthValid && yearValid && hourValid && minuteValid && chars);
+            });
+        });
+
+        $(document).ready(() => {
+            let intwDate = '@((Model.InterviewDate.HasValue) ? Model.InterviewDate.Value.ToString("dd.MM.yyyy. HH:mm") : null)';
+            let testDate = '@((Model.TestDate.HasValue) ? Model.TestDate.Value.ToString("dd.MM.yyyy. HH:mm") : null)';
+            let testDefDate = '@((Model.TestDefenseDate.HasValue) ? Model.TestDefenseDate.Value.ToString("dd.MM.yyyy. HH:mm") : null)';
+
+            $('#InterviewDate').flatpickr({
+                dateFormat: "d.m.Y. H:i",
+                defaultDate: intwDate,
+                minDate: "today",
+                maxDate: "31.12.2099. 23:59",
+                enableTime: true,
+                time_24hr: true,
+                defaultHour: 10,
+                defaultMinute: 0,
+                locale: "sr"
+            });
+
+            $('#TestDate').flatpickr({
+                dateFormat: "d.m.Y. H:i",
+                defaultDate: testDate,
+                minDate: "today",
+                maxDate: "31.12.2099. 23:59",
+                enableTime: true,
+                time_24hr: true,
+                defaultHour: 10,
+                defaultMinute: 0,
+                locale: "sr"
+            });
+
+            $('#TestDefenseDate').flatpickr({
+                dateFormat: "d.m.Y. H:i",
+                defaultDate: testDefDate,
+                minDate: "today",
+                maxDate: "31.12.2099. 23:59",
+                enableTime: true,
+                time_24hr: true,
+                defaultHour: 10,
+                defaultMinute: 0,
+                locale: "sr"
+            });
+
+            $('select[name=InterviewersIntw]').selectric({
+                maxHeight: 200,
+                responsive: true,
+                preventWindowScroll: true,
+                inheritOriginalWidth: true
+            });
+
+            $('select[name=InterviewersTest]').selectric({
+                maxHeight: 200,
+                responsive: true,
+                preventWindowScroll: true,
+                inheritOriginalWidth: true
+            });
+
+            $('select[name=InterviewersTestDef]').selectric({
+                maxHeight: 200,
+                responsive: true,
+                preventWindowScroll: true,
+                inheritOriginalWidth: true
+            });
+        });
+
+        function terminalPhaseExclusion(e, phase) {
+
+            function acceptPhaseEnable() {
+                $('#phaseAccepted').show();
+            }
+
+            function acceptPhaseDisable() {
+                $('#phaseAccepted textarea').val('');
+                $('#phaseAccepted').hide();
+            }
+
+            function rejectPhaseEnable() {
+                $('#phaseRejected').show();
+            }
+
+            function rejectPhaseDisable() {
+                $('#phaseRejected textarea').val('');
+                $('#phaseRejected').hide();
+            }
+
+            function quitPhaseEnable() {
+                $('#phaseQuit').show();
+            }
+
+            function quitPhaseDisable() {
+                $('#phaseQuit textarea').val('');
+                $('#phaseQuit').hide();
+            }
+
+            if (phase === 'Acceptance_Phase')
+            {
+                if (e.checked)
+                {
+                    acceptPhaseEnable();
+                    rejectPhaseDisable();
+                    quitPhaseDisable();
+                }
+                else
+                {
+                    rejectPhaseEnable();
+                    quitPhaseEnable();
+                }
+            }
+            else if (phase === 'Rejection_Phase')
+            {
+                if (e.checked)
+                {
+                    acceptPhaseDisable();
+                    rejectPhaseEnable();
+                    quitPhaseDisable();
+                }
+                else
+                {
+                    acceptPhaseEnable();
+                    quitPhaseEnable();
+                }
+            }
+            else if (phase === 'Quit_Phase')
+            {
+                if (e.checked)
+                {
+                    acceptPhaseDisable();
+                    rejectPhaseDisable();
+                    quitPhaseEnable();
+                }
+                else
+                {
+                    acceptPhaseEnable();
+                    rejectPhaseEnable();
+                }
+            }
+        }
+
+        function editModal() {
+            let errors = false;
+            $('div span.text-danger.field-validation-error').each((ind, elem) => {
+                errors &= elem.html();
+            });
+            if (!errors)
+                $('#modalEdit').modal("show");
+        }
+
+        let userId = @login.Id;
+        let userRole = @((int)login.Role);
+
+        let first = true;
+        let intervalSaveButton = null;
+
+        function showCommentsForPhase(e) {
+            let phase = parseInt(e.id);
+            let pInsId = $('input[name=editProcessInstanceId]').val();
+
+            if (!first)
+                $('#phase-comment-table').DataTable().destroy();
+
+            first = false;
+
+            let assetListComments = {
+                dt: null,
+                init: () => {
+                    dt = $('#phase-comment-table').DataTable({
+                        "serverSide": true,
+                        "processing": true,
+                        "autoWidth": false,
+                        "pagingType": "simple",
+                        "pageLength": 5,
+                        "dom": 'pft',
+                        "language": {
+                            "paginate": {
+                                "next": "<span>→</span>", //Sledeća
+                                "previous": "<span>←</span>" //Prethodna
+                            },
+                            "search": "<span>Pretraži komentare (po tekstu ili autoru komentara): <span>",
+                            "emptyTable": "Nema podataka za prikaz."
+                        },
+                        "ajax": {
+                            "url": "@Url.Action("GetPhaseCommentData", "Data")",
+                            "type": "POST",
+                            "data": (d) => {
+                                d.commentPhase = phase;
+                                d.processInstanceId = pInsId;
+                            },
+                            "dataSrc": (json) => {
+                                let comments = [];
+
+                                json.data.forEach((comment) => {
+                                    if (!comment.Hidden)
+                                        comments.push(comment);
+                                    else if (userRole <= 1)
+                                        comments.push(comment);
+                                });
+
+                                return comments;
+                            }
+                        },
+                        "columns": [
+                            {
+                                "searchable": false, "sortable": false,
+                                render: (data, type, row) => {
+                                    let phaseCommentHtml = "<div id='" + row.Id + "' class='" + (row.Hidden ? 'hiddenComment' : '') + "'>\
+                                                            <textarea id='" + row.Id + "' class='form-control' disabled='disabled'>" + row.Message + "</textarea>\
+                                                            <div class='commentDataContainer'>\
+                                                            <span class='small'>Autor: " + row.AuthorText + ", " + row.Time + "</span>";
+
+                                    if (userId == row.authorId || userRole == 0)
+                                        phaseCommentHtml += "<div class='pull-right btn-group btn-group-xs commentControlsContainer'>\
+                                                             <button id='" + row.Id + "editCommentModeButton' class='btn btn-primary' type='button' value='" + row.Id + "' onclick='editCommentMode(this)'>\
+                                                             <span class='glyphicon glyphicon-edit'></span>\
+                                                             </button>\
+                                                             <button id='" + row.Id + "saveCommentButton' class='btn btn-info' type='button' value='" + row.Id + "' onclick='editCommentModal(this)'>\
+                                                             <span class='glyphicon glyphicon-floppy-save'></span>\
+                                                             </button>\
+                                                             <button class='btn btn-danger' type='button' value='" + row.Id + "' onclick='deleteCommentModal(this)'>\
+                                                             <span class='glyphicon glyphicon-remove'></span>\
+                                                             </button>";
+
+                                    phaseCommentHtml += "</div>" + (row.Hidden ? '<label class="hiddenCommentText">[Skriveni komentar]</label>' : '') + "</div></div>";
+
+                                    return phaseCommentHtml
+                                }
+                            }
+                        ]
+                    });
+                }
+            };
+
+            assetListComments.init();
+
+            $('#phase-comment-table thead').remove();
+            $('#modalPhaseComments').modal("show");
+            intervalSaveButton = setInterval(() => { $('[id*=saveCommentButton]').hide(); }, 50); // jedino ovo daje rezultat
+        }
+
+        function postComment(e) {
+            let phase = parseInt(e.id);
+            let comment = $('#' + phase + 'comment').val();
+            let hidden = false;
+            let pInsId = $('input[name=editProcessInstanceId]').val();
+            let authorId = $('input[name=currentUserId]').val();
+
+            let hiddenCheck = $('#' + phase + 'hidden');
+            if (hiddenCheck.length && hiddenCheck[0].checked)
+                hidden = true;
+
+            $.ajax({
+                url: '@Url.Action("PostPhaseComment", "Annotations")',
+                type: 'POST',
+                data: {
+                    'commentMessage': comment,
+                    'commentPhase': phase,
+                    'commentHidden': hidden,
+                    'processInstanceId': pInsId,
+                    'commentAuthorId': authorId
+                },
+                success: () => {
+                    $('#' + phase + 'comment').val('');
+                } // opciono poruka o gresci na error
+            });
+        }
+
+        function editCommentMode(e) {
+            let commentId = parseInt(e.id);
+            
+            clearInterval(intervalSaveButton);
+            $('textarea[id=' + commentId + ']').removeAttr('disabled');
+            $('#' + commentId + 'editCommentModeButton').hide();
+            $('#' + commentId + 'saveCommentButton').show();
+        }
+
+        function editCommentModal(e) {
+            let commentId = parseInt(e.id);
+
+            $('#modalCommentEditConfirm .btn-info').attr('value', commentId);
+            $('#modalCommentEditConfirm').modal("show");
+        }
+
+        function saveEditedComment(e) {
+            let commentId = e.value;
+            let message = $('textarea[id=' + commentId + ']').val();
+
+            $.ajax({
+                url: '@Url.Action("EditPhaseComment", "Annotations")',
+                type: 'POST',
+                data: {
+                    'editCommentId': commentId,
+                    'editCommentText': message
+                },
+                success: () => {
+                    $('#phase-comment-table').DataTable().ajax.reload();
+                    $('#modalCommentEditConfirm').modal("hide");
+                    intervalSaveButton = setInterval(() => { $('[id*=saveCommentButton]').hide(); }, 50); // jedino ovo daje rezultat
+                } // opciono poruka o gresci na error
+            });
+        }
+
+        function deleteCommentModal(e) {
+            $('#modalDeleteComment .btn-danger').val(e.value);
+            $('#modalDeleteComment').modal("show");
+        }
+
+        function deleteComment(e) {
+            let commentId = e.value;
+
+            $.ajax({
+                url: '@Url.Action("DeletePhaseComment", "Annotations")',
+                type: 'POST',
+                data: {
+                    'deleteCommentId': commentId
+                },
+                success: () => {
+                    $('#phase-comment-table').DataTable().ajax.reload();
+                    $('#modalDeleteComment').modal("hide");
+                    intervalSaveButton = setInterval(() => { $('[id*=saveCommentButton]').hide(); }, 50); // jedino ovo daje rezultat
+                } // opciono poruka o gresci na error
+            });
+        }
+
+        function postToDoItem(e) {
+            let pInsId = e.value;
+            let message = $('#toDoItemText').val();
+
+            $.ajax({
+                url: '@Url.Action("PostToDoItem", "Annotations")',
+                type: 'POST',
+                data: {
+                    'processInstanceId': pInsId,
+                    'toDoMessage': message
+                },
+                success: (response) => {
+                    $('div.toDoItemsContainer').append("<div class='toDoItem'>\
+                                                            <p>" + message + "</p>\
+                                                            <p>\
+                                                                <input id='" + response.toDoId +
+                                                                    "' type='checkbox' onchange='markToDoItem(this)' />\
+                                                                Završeno\
+                                                            </p>\
+                                                        </div>");
+                }
+            });
+        }
+
+        function markToDoItem(e) {
+            let toDoId = e.id;
+
+            $.ajax({
+                url: '@Url.Action("MarkToDoItem", "Annotations")',
+                type: 'POST',
+                data: {
+                    'toDoItemId': toDoId
+                },
+                success: () => {
+                    e.disabled = 'disabled';
+                }, // opciono bojenje zavrsenog todoa
+                error: () => {
+                    e.removeAttr('checked'); // testirati
+                }
+            });
+        }
+
+    </script>
+
+}
